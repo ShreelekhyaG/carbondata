@@ -677,6 +677,7 @@ public class SegmentStatusManager {
       brWriter = new BufferedWriter(new OutputStreamWriter(
           dataOutputStream, Charset.forName(DEFAULT_CHARSET)));
       brWriter.write(content);
+      LOG.info("Write file success: " + filePath);
     } catch (IOException ioe) {
       LOG.error("Write file failed: " + ioe.getLocalizedMessage());
       fileWrite.setFailed();

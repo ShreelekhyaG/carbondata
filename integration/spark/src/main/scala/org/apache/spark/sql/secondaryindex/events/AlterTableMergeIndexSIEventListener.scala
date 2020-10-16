@@ -33,8 +33,10 @@ import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.index.Segment
 import org.apache.carbondata.core.locks.{CarbonLockFactory, LockUsage}
+import org.apache.carbondata.core.metadata.SegmentFileStore
 import org.apache.carbondata.core.metadata.index.IndexType
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
+import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.events._
 import org.apache.carbondata.processing.merger.{CarbonDataMergerUtil, CompactionType}
 
@@ -94,7 +96,8 @@ class AlterTableMergeIndexSIEventListener
                   SegmentStatusManager.mapSegmentToStartTime(carbonMainTable),
                   indexCarbonTable.getTablePath,
                   indexCarbonTable,
-                  mergeIndexProperty = true)
+                  mergeIndexProperty = true,
+                  readFileFooterFromCarbonDataFile = true)
               }
             }
           }

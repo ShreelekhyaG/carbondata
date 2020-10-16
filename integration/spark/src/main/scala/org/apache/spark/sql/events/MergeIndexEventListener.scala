@@ -29,7 +29,6 @@ import org.apache.spark.sql.util.CarbonException
 import org.apache.spark.util.MergeIndexUtil
 
 import org.apache.carbondata.common.logging.LogServiceFactory
-import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.locks.{CarbonLockFactory, LockUsage}
 import org.apache.carbondata.core.statusmanager.{FileFormat, SegmentStatusManager}
 import org.apache.carbondata.core.util.{DataLoadMetrics, ObjectSerializationUtil}
@@ -145,6 +144,15 @@ class MergeIndexEventListener extends OperationEventListener with Logging {
             // store (store <= 1.1 version) and create merge Index file as per new store so that
             // old store is also upgraded to new store
             val startTime = System.currentTimeMillis()
+            val partitionInfo: util.List[String] = operationContext
+              .getProperty("partitionPath")
+              .asInstanceOf[util.List[String]]
+            val currPartitionSpec = operationContext.getProperty("carbon.currentpartition")
+            val currPartitionSpecOption: Option[String] = if (currPartitionSpec == null) {
+              None
+            } else {
+              Option(currPartitionSpec.asInstanceOf[String])
+            }
             CarbonMergeFilesRDD.mergeIndexFiles(
               sparkSession = sparkSession,
               segmentIds = segmentsToMerge,
@@ -152,7 +160,9 @@ class MergeIndexEventListener extends OperationEventListener with Logging {
               tablePath = carbonMainTable.getTablePath,
               carbonTable = carbonMainTable,
               mergeIndexProperty = true,
-              readFileFooterFromCarbonDataFile = true)
+              readFileFooterFromCarbonDataFile = true,
+              partitionInfo = partitionInfo,
+              currPartitionSpec = currPartitionSpecOption)
             LOGGER.info("Total time taken for merge index "
                         + (System.currentTimeMillis() - startTime) + "ms")
             // clear Block index Cache
