@@ -17,6 +17,7 @@
 
 package org.apache.carbondata.indexserver
 
+import java.io.IOException
 import java.util.concurrent.Executors
 
 import scala.collection.JavaConverters._

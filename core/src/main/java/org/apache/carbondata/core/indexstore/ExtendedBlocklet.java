@@ -20,11 +20,11 @@ package org.apache.carbondata.core.indexstore;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.DataOutputStream;
-import java.io.File;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.index.Segment;
 import org.apache.carbondata.core.indexstore.blockletindex.BlockletIndexRowIndexes;
 import org.apache.carbondata.core.indexstore.row.IndexRow;
@@ -221,7 +221,7 @@ public class ExtendedBlocklet extends Blocklet {
       indexUniqueId = in.readUTF();
     }
     String filePath = getPath();
-    if (filePath.startsWith(File.separator)) {
+    if (!FileFactory.isFileExist(filePath)) {
       setFilePath(tablePath + filePath);
     } else {
       setFilePath(filePath);

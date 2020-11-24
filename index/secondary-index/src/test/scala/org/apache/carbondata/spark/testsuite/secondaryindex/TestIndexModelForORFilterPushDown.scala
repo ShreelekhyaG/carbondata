@@ -39,6 +39,7 @@ class TestIndexModelForORFilterPushDown extends QueryTest with BeforeAndAfterAll
   }
 
   override def beforeAll: Unit = {
+  //  sqlContext.setConf("spark.sql.autoBroadcastJoinThreshold", "1000000")
     dropTables
     // create table
     sql("CREATE table or_filter_pushDownValidation (empno int,empname String, " +

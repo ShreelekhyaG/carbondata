@@ -23,8 +23,10 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import org.apache.carbondata.common.logging.LogServiceFactory;
@@ -39,6 +41,7 @@ import org.apache.carbondata.core.readcommitter.ReadCommittedScope;
 import org.apache.carbondata.core.readcommitter.TableStatusReadCommittedScope;
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 
+import org.apache.carbondata.core.statusmanager.LoadMetadataDetails;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.ObjectSerializationUtil;
 
@@ -158,6 +161,19 @@ public class IndexInputFormat extends FileInputFormat<Void, ExtendedBlocklet>
           filter.setTable(table);
           if (filterResolverIntf != null) {
             filter.setExpression(filterResolverIntf.getFilterExpression());
+          }
+          for (Segment segment : segmentsToLoad) {
+            if (segment.getSegmentPath() == null) {
+              // Set segment path from LoadMetadataDetails, can be used to identify if its
+              // external segment.
+              Optional<LoadMetadataDetails> loadMetadataDetails =
+                  Arrays.stream(readCommittedScope.getSegmentList())
+                      .filter(details -> details.getLoadName().equals(segment.getSegmentNo()))
+                      .findFirst();
+              if (loadMetadataDetails.isPresent()) {
+                segment.setSegmentPath(loadMetadataDetails.get().getPath());
+              }
+            }
           }
           blocklets = defaultIndex.prune(segmentsToLoad, filter, partitions);
           blocklets = IndexUtil
