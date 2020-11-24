@@ -126,7 +126,7 @@ public class Segment implements Serializable, Writable {
   public Segment(String segmentNo, String segmentFileName, String segmentPath,
       Map<String, String> options) {
     this(segmentNo, segmentFileName);
-    this.segmentPath = segmentPath;
+    this.setSegmentPath(segmentPath);
     this.options = options;
   }
 
@@ -338,7 +338,7 @@ public class Segment implements Serializable, Writable {
   public String getSegmentPath() {
     if (segmentPath == null) {
       if (loadMetadataDetails != null) {
-        segmentPath = loadMetadataDetails.getPath();
+        setSegmentPath(loadMetadataDetails.getPath());
       }
     }
     return segmentPath;
@@ -412,5 +412,9 @@ public class Segment implements Serializable, Writable {
 
   public void setSegmentMetaDataInfo(SegmentMetaDataInfo segmentMetaDataInfo) {
     this.segmentMetaDataInfo = segmentMetaDataInfo;
+  }
+
+  public void setSegmentPath(String segmentPath) {
+    this.segmentPath = segmentPath;
   }
 }

@@ -16,6 +16,7 @@
  */
 package org.apache.carbondata.indexserver
 
+import java.io.IOException
 import java.util
 
 import scala.collection.JavaConverters._
@@ -69,6 +70,9 @@ class DistributedIndexJob extends AbstractIndexJob {
         // In case of presto with index server flow, sparkSession will be null
         if (!isQueryFromPresto) {
           val spark = SparkSQLUtil.getSparkSession
+          if( spark ==  null) {
+              LOGGER.info("aaaaaaaaaaaaaaaaaa")
+            }
           indexFormat.setTaskGroupId(SparkSQLUtil.getTaskGroupId(spark))
           indexFormat.setTaskGroupDesc(SparkSQLUtil.getTaskGroupDesc(spark))
         } else {

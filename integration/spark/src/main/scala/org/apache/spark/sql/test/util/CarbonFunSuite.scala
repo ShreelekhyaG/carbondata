@@ -44,4 +44,12 @@ private[spark] abstract class CarbonFunSuite extends FunSuite {
     }
   }
 
+  protected def test(testName : scala.Predef.String, ignoreForIndexServer: Boolean,
+                     testTags : org.scalatest.Tag*)
+                    (testFun : => Unit): Unit = {
+    if (!ignoreForIndexServer || System.getenv("useIndexServer") == null) {
+      super.test(testName)(testFun)
+    }
+  }
+
 }
