@@ -198,7 +198,8 @@ class TestCarbonShowCacheCommand extends QueryTest with BeforeAndAfterAll {
     assertResult(0)(indexCacheInfo.length)
   }
 
-  test("show metacache on table") {
+  // Exclude when running with index server, as show cache rows count varies.
+  test("show metacache on table", true) {
     sql("use cache_db").collect()
 
     // Table with Index & Bloom filter
@@ -352,7 +353,8 @@ class TestCarbonShowCacheCommand extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists carbonTable")
   }
 
-  test("test cache expiration using expiringMap with bloom") {
+  // Exclude when running with index server, as show cache rows count varies.
+  test("test cache expiration using expiringMap with bloom", true) {
     sql("drop table if exists carbonTable")
     sql("create table carbonTable(col1 int, col2 string,col3 string) stored as carbondata " +
         "tblproperties('index_cache_expiration_seconds'='1')")

@@ -26,6 +26,7 @@ import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.carbondata.indexserver.IndexServer
 
 /**
  * This class is a sql executor of unit test case for spark version 2.x.
@@ -82,6 +83,18 @@ object SparkTestQueryExecutor {
       copyResourcesifNotExists(hdfsUrl, s"$integrationPath/spark/src/test/resources",
         s"$integrationPath//spark-common-cluster-test/src/test/resources/testdatafileslist.txt")
   }
+  if (System.getProperty("useIndexServer") != null || System.getenv("useIndexServer") != null) {
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_INDEX_SERVER_IP, "localhost")
+      .addProperty(CarbonCommonConstants.CARBON_INDEX_SERVER_PORT, "9999")
+      .addProperty(CarbonCommonConstants.CARBON_ENABLE_INDEX_SERVER, "true")
+      .addProperty(CarbonCommonConstants.CARBON_DISABLE_INDEX_SERVER_FALLBACK, "true")
+    //  .addProperty(CarbonCommonConstants.CARBON_INDEXSEVER_ENABLE_PREPRIMING, "true")
+    IndexServer.main(Array())
+  } else {
+    throw new RuntimeException("flag not set")
+  }
+
   FileFactory.getConfiguration.
     set("dfs.client.block.write.replace-datanode-on-failure.policy", "NEVER")
   spark.sparkContext.setLogLevel("ERROR")

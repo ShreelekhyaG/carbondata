@@ -27,6 +27,8 @@ import org.apache.carbondata.spark.testsuite.secondaryindex.TestSecondaryIndexUt
 class TestSIWithComplexArrayType extends QueryTest with BeforeAndAfterEach {
   // scalastyle:off lineLength
   override def beforeEach(): Unit = {
+//    sqlContext.setConf("spark.sql.autoBroadcastJoinThreshold", "134217728")
+//    sqlContext.setConf("spark.sql.broadcastTimeout", "3000")
     sql("drop table if exists complextable")
     sql("drop table if exists complextable2")
     sql("drop table if exists complextable3")

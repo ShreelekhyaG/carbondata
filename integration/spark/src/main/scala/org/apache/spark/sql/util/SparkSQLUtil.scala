@@ -35,10 +35,13 @@ import org.apache.spark.sql.internal.{SessionState, SQLConf}
 import org.apache.spark.sql.types.StructType
 import org.apache.spark.util.SerializableConfiguration
 
+import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.util.DataLoadMetrics
 
 object SparkSQLUtil {
+  val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
+
   def sessionState(sparkSession: SparkSession): SessionState = sparkSession.sessionState
 
   def execute(logicalPlan: LogicalPlan, sparkSession: SparkSession): DataFrame = {
@@ -50,7 +53,18 @@ object SparkSQLUtil {
   }
 
   def getSparkSession: SparkSession = {
-    SparkSession.getActiveSession.getOrElse(null)
+    var ss = SparkSession.getActiveSession.getOrElse(null)
+//    if (ss == null) {
+//      ss = SparkSession.getDefaultSession.getOrElse(null)
+//      if (ss != null) {
+//        ss
+//        LOGGER.info("----------------------------------------------")
+//      } else {
+//        throw new Exception("null spark session")
+//
+//      }
+//    }
+   ss
   }
 
   def invokeStatsMethod(logicalPlanObj: LogicalPlan, conf: SQLConf): Statistics = {

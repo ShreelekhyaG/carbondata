@@ -20,6 +20,7 @@ package org.apache.spark.sql.hive
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
 
+import org.apache.spark.SparkConf
 import org.apache.spark.sql.{CarbonDatasourceHadoopRelation, CarbonEnv, CarbonSource, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.catalog.{CatalogStorageFormat, CatalogTable, CatalogTablePartition, CatalogTableType, ExternalCatalogUtils}
@@ -44,6 +45,27 @@ import org.apache.carbondata.core.util.CarbonUtil
 object CarbonSessionUtil {
 
   val LOGGER = LogServiceFactory.getLogService("CarbonSessionUtil")
+
+  def createCarbonSession(): SparkSession = {
+    val builder = SparkSession
+      .builder().config(new SparkConf())
+      .appName("DistributedIndexServer")
+      .enableHiveSupport()
+      .config("spark.sql.extensions", "org.apache.spark.sql.CarbonExtensions")
+    if (SparkSession.getActiveSession.isDefined) {
+      builder.sparkContext(SparkSession.getActiveSession.get.sparkContext)
+    }
+    val spark = builder.getOrCreate()
+    CarbonEnv.getInstance(spark)
+
+    SparkSession.setActiveSession(spark)
+    SparkSession.setDefaultSession(spark)
+    if (spark.sparkContext.getConf
+      .get("spark.dynamicAllocation.enabled", "false").equalsIgnoreCase("true")) {
+      throw new RuntimeException("Index server is not supported with dynamic allocation enabled")
+    }
+    spark
+  }
 
   /**
    * The method refreshes the cache entry
