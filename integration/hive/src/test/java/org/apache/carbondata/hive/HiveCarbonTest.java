@@ -249,6 +249,16 @@ public class HiveCarbonTest extends HiveTestUtils {
     checkAnswer(carbonResult, hiveResult);
   }
 
+  @Test
+  public void verifyDataAfterLoadForPartition() throws Exception {
+    statement.execute("drop table if exists hive_carbon_table4");
+    statement.execute("CREATE TABLE hive_carbon_table4(shortField SMALLINT , intField INT, bigintField BIGINT , doubleField DOUBLE, stringField STRING, timestampField TIMESTAMP, decimalField DECIMAL(18,2), dateField DATE, charField CHAR(5)) partitioned by (floatField FLOAT) stored by 'org.apache.carbondata.hive.CarbonStorageHandler'");
+    statement.execute("insert into hive_carbon_table4 select * from hive_table");
+    checkAnswer(statement.executeQuery("select * from hive_carbon_table4"),
+        connection.createStatement().executeQuery("select * from hive_table"));
+  }
+
+
   @AfterClass
   public static void tearDown() {
     try {

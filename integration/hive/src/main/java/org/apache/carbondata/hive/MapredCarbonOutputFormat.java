@@ -115,9 +115,10 @@ public class MapredCarbonOutputFormat<T> extends CarbonTableOutputFormat
         carbonLoadModel.getCarbonDataLoadSchema().getCarbonTable().getPartitionInfo();
     final int partitionColumn =
         partitionInfo != null ? partitionInfo.getColumnSchemaList().size() : 0;
+    String updatedFilePath = FileFactory.getUpdatedFilePath(finalOutPath.toString());
     if (carbonLoadModel.getCarbonDataLoadSchema().getCarbonTable().isHivePartitionTable()) {
-      carbonLoadModel.getMetrics().addToPartitionPath(finalOutPath.toString());
-      context.getConfiguration().set("carbon.outputformat.writepath", finalOutPath.toString());
+      carbonLoadModel.getMetrics().addToPartitionPath(updatedFilePath);
+      context.getConfiguration().set("carbon.outputformat.writepath", updatedFilePath);
     }
     CarbonTableOutputFormat.setLoadModel(jc, carbonLoadModel);
     org.apache.hadoop.mapreduce.RecordWriter<NullWritable, ObjectArrayWritable> re =

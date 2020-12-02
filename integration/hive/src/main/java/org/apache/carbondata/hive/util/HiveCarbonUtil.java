@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -86,9 +87,13 @@ public class HiveCarbonUtil {
     }
     String[] columnTypeArray = splitSchemaStringToArray(columnTypes);
     String complexDelim = tableProperties.get("complex_delimiter", "");
+    List<String> partitionColumnsList = new ArrayList<>();
+    if (null != partitionColumns) {
+      Collections.addAll(partitionColumnsList, partitionColumns.split(","));
+    }
     CarbonLoadModel carbonLoadModel =
         getCarbonLoadModel(tableName, databaseName, tablePath, sortColumns, columns.split(","),
-            columnTypeArray, tableProperties);
+            columnTypeArray, tableProperties, partitionColumnsList);
     carbonLoadModel.setCarbonTransactionalTable(true);
     carbonLoadModel.getCarbonDataLoadSchema().getCarbonTable().setTransactionalTable(true);
     for (String delim : complexDelim.split(",")) {
@@ -105,11 +110,23 @@ public class HiveCarbonUtil {
     String tablePath = tableProperties.getProperty(hive_metastoreConstants.META_TABLE_LOCATION);
     String columns = tableProperties.getProperty(hive_metastoreConstants.META_TABLE_COLUMNS);
     String sortColumns = tableProperties.getProperty("sort_columns");
-    String[] columnTypes = splitSchemaStringToArray(tableProperties.getProperty("columns.types"));
+    String columnTypes = tableProperties.getProperty("columns.types");
     String complexDelim = tableProperties.getProperty("complex_delimiter", "");
+    String partitionColumns =
+        tableProperties.getProperty(hive_metastoreConstants.META_TABLE_PARTITION_COLUMNS);
+    String partitionColumnTypes =
+        tableProperties.getProperty(hive_metastoreConstants.META_TABLE_PARTITION_COLUMN_TYPES);
+    if (partitionColumns != null) {
+      columns = columns + "," + partitionColumns;
+      columnTypes = columnTypes + ":" + partitionColumnTypes;
+    }
+    List<String> partitionColumnsList = new ArrayList<>();
+    if (null != partitionColumns) {
+      Collections.addAll(partitionColumnsList, partitionColumns.split(","));
+    }
     CarbonLoadModel carbonLoadModel =
         getCarbonLoadModel(tableName, databaseName, tablePath, sortColumns, columns.split(","),
-            columnTypes, configuration);
+            splitSchemaStringToArray(columnTypes), configuration, partitionColumnsList);
     for (String delim : complexDelim.split(",")) {
       carbonLoadModel.setComplexDelimiter(delim);
     }
@@ -118,7 +135,7 @@ public class HiveCarbonUtil {
 
   public static CarbonLoadModel getCarbonLoadModel(String tableName, String databaseName,
       String location, String sortColumnsString, String[] columns, String[] columnTypes,
-      Configuration configuration) {
+      Configuration configuration, List<String> partitionColumns) {
     CarbonLoadModel loadModel;
     CarbonTable carbonTable;
     try {
@@ -133,7 +150,7 @@ public class HiveCarbonUtil {
         if (carbonDataFile == null) {
           carbonTable = CarbonTable.buildFromTableInfo(
               getTableInfo(tableName, databaseName, location, sortColumnsString, columns,
-                  columnTypes, new ArrayList<>()));
+                  columnTypes, partitionColumns));
         } else {
           carbonTable = CarbonTable.buildFromTableInfo(
               SchemaReader.inferSchema(absoluteTableIdentifier, false, configuration));
@@ -172,11 +189,15 @@ public class HiveCarbonUtil {
       columns = columns + "," + partitionColumns;
       columnTypes = columnTypes + ":" + partitionColumnTypes;
     }
+    List<String> partitionColumnsList = new ArrayList<>();
+    if (null != partitionColumns) {
+      Collections.addAll(partitionColumnsList, partitionColumns.split(","));
+    }
     String[][] validatedColumnsAndTypes = validateColumnsAndTypes(columns, columnTypes);
     CarbonTable carbonTable = CarbonTable.buildFromTableInfo(
         HiveCarbonUtil.getTableInfo(tableName, databaseName, tablePath,
             sortColumns, validatedColumnsAndTypes[0],
-            validatedColumnsAndTypes[1], new ArrayList<>()));
+            validatedColumnsAndTypes[1], partitionColumnsList));
     carbonTable.setTransactionalTable(false);
     return carbonTable;
   }
