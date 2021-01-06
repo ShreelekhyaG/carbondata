@@ -364,6 +364,12 @@ public class CarbonIndexFileMergeWriter {
         isOldStoreIndexFilesPresent, uuid, partitionPath);
   }
 
+  public String mergeCarbonIndexFilesOfSegment(String segmentId, String uuid, String tablePath,
+      String partitionPath, boolean isOldStoreIndexFilesPresent, List<String> indexFileNames) {
+    return mergeCarbonIndexFilesOfSegment(segmentId, tablePath, indexFileNames,
+        isOldStoreIndexFilesPresent, uuid, partitionPath);
+  }
+
   /**
    * Merge all the carbon index files of segment to a  merged file
    *

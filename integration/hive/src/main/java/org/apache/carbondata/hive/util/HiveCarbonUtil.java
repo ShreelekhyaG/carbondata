@@ -82,6 +82,9 @@ public class HiveCarbonUtil {
     String partitionColumnTypes =
         tableProperties.get(hive_metastoreConstants.META_TABLE_PARTITION_COLUMN_TYPES);
     if (partitionColumns != null) {
+      if (partitionColumns.contains("/")) {
+        partitionColumns = partitionColumns.replace("/", ",");
+      }
       columns = columns + "," + partitionColumns;
       columnTypes = columnTypes + ":" + partitionColumnTypes;
     }
@@ -117,6 +120,9 @@ public class HiveCarbonUtil {
     String partitionColumnTypes =
         tableProperties.getProperty(hive_metastoreConstants.META_TABLE_PARTITION_COLUMN_TYPES);
     if (partitionColumns != null) {
+      if (partitionColumns.contains("/")) {
+        partitionColumns = partitionColumns.replace("/", ",");
+      }
       columns = columns + "," + partitionColumns;
       columnTypes = columnTypes + ":" + partitionColumnTypes;
     }
@@ -186,6 +192,9 @@ public class HiveCarbonUtil {
     String partitionColumnTypes =
         tableProperties.get(hive_metastoreConstants.META_TABLE_PARTITION_COLUMN_TYPES);
     if (partitionColumns != null) {
+      if (partitionColumns.contains("/")) {
+        partitionColumns = partitionColumns.replace("/", ",");
+      }
       columns = columns + "," + partitionColumns;
       columnTypes = columnTypes + ":" + partitionColumnTypes;
     }

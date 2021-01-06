@@ -141,7 +141,7 @@ public final class CarbonLoadOptionConstants {
   public static final String ENABLE_CARBON_LOAD_DIRECT_WRITE_TO_STORE_PATH =
       "carbon.load.directWriteToStorePath.enabled";
 
-  public static final String ENABLE_CARBON_LOAD_DIRECT_WRITE_TO_STORE_PATH_DEFAULT = "false";
+  public static final String ENABLE_CARBON_LOAD_DIRECT_WRITE_TO_STORE_PATH_DEFAULT = "true";
 
   /**
    * If the sort memory is insufficient, spill in-memory pages to disk.

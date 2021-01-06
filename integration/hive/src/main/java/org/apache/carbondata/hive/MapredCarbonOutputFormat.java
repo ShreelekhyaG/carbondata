@@ -118,6 +118,7 @@ public class MapredCarbonOutputFormat<T> extends CarbonTableOutputFormat
     String updatedFilePath = FileFactory.getUpdatedFilePath(finalOutPath.toString());
     if (carbonLoadModel.getCarbonDataLoadSchema().getCarbonTable().isHivePartitionTable()) {
       carbonLoadModel.getMetrics().addToPartitionPath(updatedFilePath);
+      carbonLoadModel.setHivePartitionTable(true);
       context.getConfiguration().set("carbon.outputformat.writepath", updatedFilePath);
     }
     CarbonTableOutputFormat.setLoadModel(jc, carbonLoadModel);

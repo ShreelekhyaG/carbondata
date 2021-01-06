@@ -269,7 +269,7 @@ public class CarbonOutputCommitter extends FileOutputCommitter {
       List<String> partitionList =
           (List<String>) ObjectSerializationUtil.convertStringToObject(partitionPath);
       SegmentFileStore.writeSegmentFile(loadModel.getTablePath(), loadModel.getSegmentId(),
-          String.valueOf(loadModel.getFactTimeStamp()), partitionList, indexFileNameMap);
+          String.valueOf(loadModel.getFactTimeStamp()), partitionList, indexFileNameMap, false);
       tempFolderPath = null;
     }
     if (operationContext != null) {

@@ -121,7 +121,8 @@ public class SegmentFileStore {
    * @throws IOException
    */
   public static void writeSegmentFile(String tablePath, String segmentId, String timeStamp,
-      List<String> partitionNames, Map<String, Set<String>> indexFileNames) throws IOException {
+      List<String> partitionNames, Map<String, Set<String>> indexFileNames,
+      boolean isMergeIndexFlow) throws IOException {
     SegmentFileStore.SegmentFile finalSegmentFile = null;
     boolean isRelativePath;
     String partitionLoc;
@@ -134,7 +135,20 @@ public class SegmentFileStore {
       }
       SegmentFileStore.SegmentFile segmentFile = new SegmentFileStore.SegmentFile();
       SegmentFileStore.FolderDetails folderDetails = new SegmentFileStore.FolderDetails();
-      folderDetails.setFiles(indexFileNames.get(partition));
+      if (!isMergeIndexFlow) {
+        folderDetails.setFiles(indexFileNames.get(partition));
+      } else {
+        CarbonFile partitionFolder = FileFactory.getCarbonFile(partition);
+        String mergeIndexFile = segmentId + "_" + timeStamp + CarbonTablePath.MERGE_INDEX_FILE_EXT;
+        CarbonFile[] carbonFiles = partitionFolder.listFiles(
+            file -> file.getName().startsWith(mergeIndexFile) && file.getName()
+                .endsWith(CarbonTablePath.MERGE_INDEX_FILE_EXT));
+        if (carbonFiles != null && carbonFiles.length > 0) {
+          folderDetails.setMergeFileName(carbonFiles[0].getName());
+        } else {
+          return;
+        }
+      }
       folderDetails.setPartitions(
           Collections.singletonList(partitionLoc.substring(partitionLoc.indexOf("/") + 1)));
       folderDetails.setRelative(isRelativePath);
@@ -965,7 +979,12 @@ public class SegmentFileStore {
           Set<String> files = entry.getValue().getFiles();
           if (null != files && !files.isEmpty()) {
             for (String indexFile : files) {
-              String indexFilePath = location + CarbonCommonConstants.FILE_SEPARATOR + indexFile;
+              String indexFilePath;
+              if (location.endsWith("/")) {
+                indexFilePath = location + indexFile;
+              } else {
+                indexFilePath = location + CarbonCommonConstants.FILE_SEPARATOR + indexFile;
+              }
               // In the 1.3 store, files field contain the carbonindex files names
               // even if they are merged to a carbonindexmerge file. In that case we have to check
               // for the physical existence of the file to decide

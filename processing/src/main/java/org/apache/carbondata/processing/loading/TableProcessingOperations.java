@@ -54,7 +54,7 @@ public class TableProcessingOperations {
     String tempLocationKey = CarbonDataProcessorUtil
         .getTempStoreLocationKey(databaseName, tableName, loadModel.getSegmentId(),
             loadModel.getTaskNo(), isCompactionFlow, isAltPartitionFlow);
-    deleteLocalDataLoadFolderLocation(tempLocationKey, tableName);
+    deleteLocalDataLoadFolderLocation(tempLocationKey, tableName, loadModel.isHivePartitionTable());
   }
 
   /**
@@ -64,11 +64,15 @@ public class TableProcessingOperations {
    * @param tempLocationKey temporary location set in carbon properties
    * @param tableName
    */
-  public static void deleteLocalDataLoadFolderLocation(String tempLocationKey, String tableName) {
+  public static void deleteLocalDataLoadFolderLocation(String tempLocationKey, String tableName,
+      boolean isHivePartitionTable) {
 
     // form local store location
     final String localStoreLocations = CarbonProperties.getInstance().getProperty(tempLocationKey);
     if (localStoreLocations == null) {
+      if (isHivePartitionTable) {
+        return;
+      }
       throw new RuntimeException("Store location not set for the key " + tempLocationKey);
     }
     // submit local folder clean up in another thread so that main thread execution is not blocked

@@ -66,6 +66,33 @@ public class HiveCarbonTest extends HiveTestUtils {
     String complexFilePath = (resourceDirectoryPath + COMPLEX).replace("\\", "/");
     statement.execute(String.format("CREATE external TABLE hive_table_complex(arrayField  ARRAY<STRING>, mapField MAP<String, String>, structField STRUCT<city: String, pincode: int>) ROW FORMAT SERDE 'org.apache.hadoop.hive.contrib.serde2.MultiDelimitSerDe' WITH SERDEPROPERTIES ('field.delim'=',', 'collection.delim'='$', 'mapkey.delim'='@') location '%s' TBLPROPERTIES('external.table.purge'='false')", complexFilePath));
     statement.execute(String.format("CREATE external TABLE hive_table(shortField SMALLINT, intField INT, bigintField BIGINT, doubleField DOUBLE, stringField STRING, timestampField TIMESTAMP, decimalField DECIMAL(18,2), dateField DATE, charField CHAR(5), floatField FLOAT) ROW FORMAT DELIMITED FIELDS TERMINATED BY ',' location '%s' TBLPROPERTIES ('external.table.purge'='false')", csvFilePath));
+
+  }
+
+  @Test
+  public void verify() throws Exception {
+    System.setProperty("hadoop.log.dir", new File("/home/root1/logs").getAbsolutePath());
+
+    System.setProperty("log4j2.debug","true");
+    statement.execute("drop table if exists carbon_table1");
+   // statement.execute("CREATE TABLE carbon_table1(shortField SMALLINT, intField INT) partitioned by (stringField STRING, age int, age1 int)stored by 'org.apache.carbondata.hive.CarbonStorageHandler'");
+ //   statement.execute("insert into carbon_table1 values(1,2,'ab',3,4)");
+//    statement.execute("insert overwrite table carbon_table1 values(1,2,'abc',3,4)");
+
+ //   statement.execute("insert into carbon_table1 values(1,2,'abc',4,5),(1,2,'abc',4,5)");
+
+//    statement.execute("drop table if exists hive_table1");
+    statement.execute("CREATE TABLE hive_table1(shortField SMALLINT, intField INT,stringField STRING,age int, age1 int) ROW FORMAT DELIMITED FIELDS TERMINATED BY ','");
+//    statement.execute("insert into hive_table1 values(1,2,'ab',3,4)");
+//    statement.execute("insert overwrite table hive_table1 values(1,2,'abc',3,4)");
+//
+////    statement.execute("insert into hive_table1 values(1,2,'abc',4,5),(1,2,'abc',4,6)");
+//    statement.executeQuery("select * from hive_table1");
+//    checkAnswer(statement.executeQuery("select * from hive_table1"),
+//        connection.createStatement().executeQuery("select * from carbon_table1"));
+//    checkAnswer(statement.executeQuery("select * from hive_table1 where stringField='ab'"),
+//        connection.createStatement().executeQuery("select * from carbon_table1 where stringField='ab'"));
+
   }
 
   @Test

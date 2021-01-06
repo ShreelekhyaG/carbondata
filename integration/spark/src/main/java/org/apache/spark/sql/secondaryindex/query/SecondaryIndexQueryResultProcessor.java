@@ -206,7 +206,7 @@ public class SecondaryIndexQueryResultProcessor {
           indexTable.getTableName(), carbonLoadModel.getSegmentId(), carbonLoadModel.getTaskNo(),
           false, false);
       TableProcessingOperations.deleteLocalDataLoadFolderLocation(tempLocationKey,
-          indexTable.getTableName());
+          indexTable.getTableName(), false);
     }
   }
 

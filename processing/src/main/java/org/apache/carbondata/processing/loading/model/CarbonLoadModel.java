@@ -230,6 +230,8 @@ public class CarbonLoadModel implements Serializable {
 
   private boolean skipParsers = false;
 
+  private boolean isHivePartitionTable;
+
   public void setSkipParsers() {
     skipParsers = true;
   }
@@ -904,5 +906,13 @@ public class CarbonLoadModel implements Serializable {
 
   public void setNonSchemaColumnsPresent(boolean nonSchemaColumnsPresent) {
     this.nonSchemaColumnsPresent = nonSchemaColumnsPresent;
+  }
+
+  public boolean isHivePartitionTable() {
+    return isHivePartitionTable;
+  }
+
+  public void setHivePartitionTable(boolean isHivePartitionTable) {
+    this.isHivePartitionTable = isHivePartitionTable;
   }
 }

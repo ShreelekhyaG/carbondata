@@ -80,6 +80,7 @@ public abstract class HiveTestUtils {
       Assert.assertEquals(actual.getMetaData().getColumnCount(), numOfColumnsExpected);
       for (int i = 1; i <= numOfColumnsExpected; i++) {
         if (actual.getString(i).contains(":")) {
+          System.out.println(actual.getString(i)+" "+expected.getString(i));
           Assert.assertTrue(checkMapKeyPairsAfterSorting(actual.getString(i), expected.getString(i)));
         } else {
           expectedValuesList.add(expected.getString(i));
