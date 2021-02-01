@@ -75,8 +75,12 @@ public class HiveCarbonTest extends HiveTestUtils {
 
     System.setProperty("log4j2.debug","true");
     statement.execute("drop table if exists carbon_table1");
+
    // statement.execute("CREATE TABLE carbon_table1(shortField SMALLINT, intField INT) partitioned by (stringField STRING, age int, age1 int)stored by 'org.apache.carbondata.hive.CarbonStorageHandler'");
  //   statement.execute("insert into carbon_table1 values(1,2,'ab',3,4)");
+    statement.execute("CREATE TABLE carbon_table1(shortField SMALLINT, intField INT) partitioned by (stringField STRING, age int, age1 int)stored by 'org.apache.carbondata.hive.CarbonStorageHandler'");
+//    statement.execute("insert into carbon_table1 values(1,2,'ab',3,4)");
+
 //    statement.execute("insert overwrite table carbon_table1 values(1,2,'abc',3,4)");
 
  //   statement.execute("insert into carbon_table1 values(1,2,'abc',4,5),(1,2,'abc',4,5)");

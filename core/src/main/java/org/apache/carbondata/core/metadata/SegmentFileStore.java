@@ -109,6 +109,11 @@ public class SegmentFileStore {
         false);
   }
 
+  public static void writeSegmentFile(String tablePath, String segmentId, String timeStamp,
+      List<String> partitionNames, Map<String, Set<String>> indexFileNames) throws IOException {
+    writeSegmentFile(tablePath, segmentId, timeStamp, partitionNames, indexFileNames, false);
+  }
+
   /**
    * Method to create and write the segment file, removes the temporary directories from all the
    * respective partition directories. This method is invoked only when {@link
@@ -118,6 +123,7 @@ public class SegmentFileStore {
    * @param timeStamp FactTimeStamp
    * @param partitionNames Partition names list
    * @param indexFileNames Index files map with partition as key and index file names set as value
+   * @param isMergeIndexFlow merge index flow
    * @throws IOException
    */
   public static void writeSegmentFile(String tablePath, String segmentId, String timeStamp,
