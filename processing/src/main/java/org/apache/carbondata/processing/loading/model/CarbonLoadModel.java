@@ -138,6 +138,8 @@ public class CarbonLoadModel implements Serializable {
    */
   private boolean preFetch;
 
+  private boolean directWriteToHdfs = false;
+
   /**
    * Batch sort should be enabled or not
    */
@@ -914,5 +916,13 @@ public class CarbonLoadModel implements Serializable {
 
   public void setHivePartitionTable(boolean isHivePartitionTable) {
     this.isHivePartitionTable = isHivePartitionTable;
+  }
+
+  public boolean isDirectWriteToHdfs() {
+    return directWriteToHdfs;
+  }
+
+  public void setDirectWriteToHdfs(boolean directWriteToHdfs) {
+    this.directWriteToHdfs = directWriteToHdfs;
   }
 }

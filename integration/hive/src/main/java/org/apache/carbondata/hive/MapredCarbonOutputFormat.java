@@ -120,6 +120,7 @@ public class MapredCarbonOutputFormat<T> extends CarbonTableOutputFormat
       carbonLoadModel.getMetrics().addToPartitionPath(updatedFilePath);
       carbonLoadModel.setHivePartitionTable(true);
       context.getConfiguration().set("carbon.outputformat.writepath", updatedFilePath);
+      carbonLoadModel.setDirectWriteToHdfs(true);
     }
     CarbonTableOutputFormat.setLoadModel(jc, carbonLoadModel);
     org.apache.hadoop.mapreduce.RecordWriter<NullWritable, ObjectArrayWritable> re =

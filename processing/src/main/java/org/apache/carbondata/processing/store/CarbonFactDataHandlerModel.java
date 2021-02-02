@@ -25,6 +25,7 @@ import java.util.Map;
 
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.constants.CarbonLoadOptionConstants;
 import org.apache.carbondata.core.constants.SortScopeOptions;
 import org.apache.carbondata.core.datastore.TableSpec;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
@@ -162,6 +163,8 @@ public class CarbonFactDataHandlerModel {
 
   private DataLoadMetrics metrics;
 
+  private boolean isDirectWriteToHdfs = false;
+
   /**
    * Create the model using @{@link CarbonDataLoadConfiguration}
    */
@@ -232,6 +235,9 @@ public class CarbonFactDataHandlerModel {
     carbonFactDataHandlerModel.tableSpec = configuration.getTableSpec();
     carbonFactDataHandlerModel.sortScope = CarbonDataProcessorUtil.getSortScope(configuration);
     carbonFactDataHandlerModel.columnCompressor = configuration.getColumnCompressor();
+    carbonFactDataHandlerModel.isDirectWriteToHdfs = Boolean.parseBoolean(configuration
+        .getDataLoadProperty(
+            CarbonLoadOptionConstants.ENABLE_CARBON_LOAD_DIRECT_WRITE_TO_STORE_PATH).toString());
 
     if (listener == null) {
       listener = new IndexWriterListener();
@@ -662,6 +668,10 @@ public class CarbonFactDataHandlerModel {
 
   public void setMetrics(DataLoadMetrics metrics) {
     this.metrics = metrics;
+  }
+
+  public boolean isDirectWriteToHdfs() {
+    return isDirectWriteToHdfs;
   }
 }
 

@@ -176,6 +176,9 @@ public abstract class AbstractFactDataWriter implements CarbonFactDataWriter {
         .getProperty(CarbonLoadOptionConstants.ENABLE_CARBON_LOAD_DIRECT_WRITE_TO_STORE_PATH,
             CarbonLoadOptionConstants.ENABLE_CARBON_LOAD_DIRECT_WRITE_TO_STORE_PATH_DEFAULT);
     this.enableDirectlyWriteDataToStorePath = "TRUE".equalsIgnoreCase(directlyWriteData2Hdfs);
+    if (model.isDirectWriteToHdfs()) {
+      this.enableDirectlyWriteDataToStorePath = model.isDirectWriteToHdfs();
+    }
 
     if (enableDirectlyWriteDataToStorePath) {
       LOGGER.info("Carbondata will directly write fact data to store path.");
