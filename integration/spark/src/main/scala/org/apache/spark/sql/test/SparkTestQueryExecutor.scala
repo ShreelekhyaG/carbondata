@@ -86,14 +86,15 @@ object SparkTestQueryExecutor {
   if (System.getProperty("useIndexServer") != null || System.getenv("useIndexServer") != null) {
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_INDEX_SERVER_IP, "localhost")
-      .addProperty(CarbonCommonConstants.CARBON_INDEX_SERVER_PORT, "9999")
+      .addProperty(CarbonCommonConstants.CARBON_INDEX_SERVER_PORT, "9997")
       .addProperty(CarbonCommonConstants.CARBON_ENABLE_INDEX_SERVER, "true")
       .addProperty(CarbonCommonConstants.CARBON_DISABLE_INDEX_SERVER_FALLBACK, "true")
     //  .addProperty(CarbonCommonConstants.CARBON_INDEXSEVER_ENABLE_PREPRIMING, "true")
     IndexServer.main(Array())
-  } else {
-    throw new RuntimeException("flag not set")
   }
+  //  else {
+  //    throw new RuntimeException("flag not set")
+  //  }
 
   FileFactory.getConfiguration.
     set("dfs.client.block.write.replace-datanode-on-failure.policy", "NEVER")

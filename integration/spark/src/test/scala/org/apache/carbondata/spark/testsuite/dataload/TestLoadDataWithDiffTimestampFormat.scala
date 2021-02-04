@@ -211,11 +211,10 @@ class TestLoadDataWithDiffTimestampFormat extends QueryTest with BeforeAndAfterA
       sql("SELECT date FROM t3 WHERE ID = 18"),
       Seq(Row(new Date(sdf.parse("2015-07-25").getTime)))
     )
-    CarbonProperties.getInstance().addProperty(CarbonLoadOptionConstants.CARBON_OPTIONS_DATEFORMAT,
-      CarbonLoadOptionConstants.CARBON_OPTIONS_DATEFORMAT_DEFAULT)
     CarbonProperties.getInstance()
-      .addProperty(CarbonLoadOptionConstants.CARBON_OPTIONS_TIMESTAMPFORMAT,
-      CarbonLoadOptionConstants.CARBON_OPTIONS_TIMESTAMPFORMAT_DEFAULT)
+      .removeProperty(CarbonLoadOptionConstants.CARBON_OPTIONS_DATEFORMAT)
+    CarbonProperties.getInstance()
+      .removeProperty(CarbonLoadOptionConstants.CARBON_OPTIONS_TIMESTAMPFORMAT)
   }
 
   test("test insert data with date/timestamp format set at table level") {

@@ -36,7 +36,7 @@ class TestSIWithAddSegment extends QueryTest with BeforeAndAfterAll {
     sql("create table maintable(a string, b int, c string) stored as carbondata")
     sql("insert into maintable select 'k',1,'k'")
     sql("insert into maintable select 'l',2,'l'")
-    sql("CREATE INDEX maintable_si  on table maintable (c) as 'carbondata'")
+    sql("CREATE INDEX maintable_si1  on table maintable (c) as 'carbondata'")
     val carbonTable = CarbonEnv.getCarbonTable(None, "maintable")(sqlContext.sparkSession)
     val segmentPath = CarbonTablePath.getSegmentPath(carbonTable.getTablePath, "0")
     val schema = CarbonSchemaReader.readSchema(segmentPath).asOriginOrder()
@@ -54,7 +54,7 @@ class TestSIWithAddSegment extends QueryTest with BeforeAndAfterAll {
   }
 
   private def dropTables(): Unit = {
-    sql("drop index if exists maintable_si on maintable")
+    sql("drop index if exists maintable_si1 on maintable")
     sql("drop table if exists maintable")
     sql("drop index if exists maintable1_si on maintable1")
     sql("drop table if exists maintable1")

@@ -23,12 +23,12 @@ import scala.reflect.ClassTag
 import org.apache.hadoop.conf.Configuration
 import org.apache.spark.{Dependency, OneToOneDependency, Partition, TaskContext}
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.{CarbonThreadUtil, SparkSession}
 import org.apache.spark.sql.util.SparkSQLUtil
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.schema.table.TableInfo
-import org.apache.carbondata.core.util._
+import org.apache.carbondata.core.util.{ThreadLocalSessionInfo, _}
 
 /**
  * This RDD maintains session level ThreadLocal
@@ -47,6 +47,7 @@ abstract class CarbonRDD[T: ClassTag](
       info = new CarbonSessionInfo
       info.setSessionParams(new SessionParams())
     }
+    info.getSessionParams.getAddedProps.clear()
     info.getSessionParams.addProps(CarbonProperties.getInstance().getAddedProperty)
     info
   }
