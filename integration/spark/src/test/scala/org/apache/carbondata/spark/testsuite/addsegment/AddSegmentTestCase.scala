@@ -69,18 +69,27 @@ class AddSegmentTestCase extends QueryTest with BeforeAndAfterAll {
     sql("clean files for table addsegment1")
     checkAnswer(sql("select count(*) from addsegment1"), Seq(Row(10)))
 
-    sql(s"alter table addsegment1 add segment options('path'='$newPath', 'format'='carbon')")
-      .collect()
-    checkAnswer(sql("select count(*) from addsegment1"), Seq(Row(20)))
-    checkAnswer(sql("select count(empname) from addsegment1"), Seq(Row(20)))
-
-    // cannot add segment from same path file again so deleting previously added segment
-    sql("delete from table addsegment1 where segment.id in (2)")
-    sql(s"alter table addsegment1 add segment options('path'='$newPathWithLineSeparator', " +
-        s"'format'='carbon')")
-      .collect()
-    checkAnswer(sql("select count(*) from addsegment1"), Seq(Row(20)))
-    FileFactory.deleteAllFilesOfDir(new File(newPath))
+//    sql(s"alter table addsegment1 add segment options('path'='$newPath', 'format'='carbon')")
+//      .collect()
+    sql("DROP TABLE IF EXISTS sdkOutputTable")
+    sql(
+      s"""
+         | CREATE EXTERNAL TABLE sdkOutputTable
+         | STORED AS carbondata
+         | LOCATION '$newPath'
+      """.stripMargin)
+    sql("select *from sdkOutputTable").show(false)
+    sql("select *from sdkOutputTable where empno = 12").show(false)
+//    checkAnswer(sql("select count(*) from addsegment1"), Seq(Row(20)))
+//    checkAnswer(sql("select count(empname) from addsegment1"), Seq(Row(20)))
+//
+//    // cannot add segment from same path file again so deleting previously added segment
+//    sql("delete from table addsegment1 where segment.id in (2)")
+//    sql(s"alter table addsegment1 add segment options('path'='$newPathWithLineSeparator', " +
+//        s"'format'='carbon')")
+//      .collect()
+//    checkAnswer(sql("select count(*) from addsegment1"), Seq(Row(20)))
+//    FileFactory.deleteAllFilesOfDir(new File(newPath))
   }
 
   test("Test add segment for the segment having delete delta files") {

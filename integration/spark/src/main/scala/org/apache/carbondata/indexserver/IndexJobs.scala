@@ -70,9 +70,6 @@ class DistributedIndexJob extends AbstractIndexJob {
         // In case of presto with index server flow, sparkSession will be null
         if (!isQueryFromPresto) {
           val spark = SparkSQLUtil.getSparkSession
-          if( spark ==  null) {
-              LOGGER.info("aaaaaaaaaaaaaaaaaa")
-            }
           indexFormat.setTaskGroupId(SparkSQLUtil.getTaskGroupId(spark))
           indexFormat.setTaskGroupDesc(SparkSQLUtil.getTaskGroupDesc(spark))
         } else {

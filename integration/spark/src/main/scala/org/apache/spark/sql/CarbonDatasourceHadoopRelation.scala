@@ -21,6 +21,7 @@ import scala.collection.JavaConverters._
 
 import org.apache.spark.CarbonInputMetrics
 import org.apache.spark.rdd.RDD
+import org.apache.spark.sql.SparkSession.setActiveSession
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions.{GetStructField, NamedExpression}
 import org.apache.spark.sql.execution.command.management.CarbonInsertIntoCommand

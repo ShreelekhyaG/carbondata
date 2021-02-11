@@ -55,7 +55,7 @@ object CarbonSessionUtil {
     if (SparkSession.getActiveSession.isDefined) {
       builder.sparkContext(SparkSession.getActiveSession.get.sparkContext)
     }
-    val spark = builder.getOrCreate()
+    val spark = builder.getOrCreate().newSession()
     CarbonEnv.getInstance(spark)
 
     SparkSession.setActiveSession(spark)

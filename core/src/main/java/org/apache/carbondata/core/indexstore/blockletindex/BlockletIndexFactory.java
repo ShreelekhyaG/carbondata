@@ -59,6 +59,7 @@ import org.apache.carbondata.core.indexstore.SegmentPropertiesFetcher;
 import org.apache.carbondata.core.indexstore.TableBlockIndexUniqueIdentifier;
 import org.apache.carbondata.core.indexstore.TableBlockIndexUniqueIdentifierWrapper;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
+import org.apache.carbondata.core.metadata.index.IndexType;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.IndexSchema;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
@@ -110,9 +111,15 @@ public class BlockletIndexFactory extends CoarseGrainIndexFactory
    * @param carbonTable
    * @return
    */
-  public static Index createIndex(CarbonTable carbonTable) {
+  public static Index createIndex(CarbonTable carbonTable) throws IOException {
     boolean cacheLevelBlock = BlockletIndexUtil.isCacheLevelBlock(carbonTable);
-    if (cacheLevelBlock) {
+    boolean hasBloomIndex = false;
+    if (carbonTable.getIndexMetadata() != null) {
+      // a bloomfilter index is maintained per blocklet.
+      hasBloomIndex = carbonTable.getIndexMetadata().getIndexesMap()
+          .containsKey(IndexType.BLOOMFILTER.getIndexProviderName());
+    }
+    if (cacheLevelBlock && !hasBloomIndex) {
       // case1: when CACHE_LEVEL = BLOCK
       return new BlockIndex();
     } else {

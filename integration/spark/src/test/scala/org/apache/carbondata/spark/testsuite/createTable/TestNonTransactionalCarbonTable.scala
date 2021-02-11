@@ -274,7 +274,9 @@ class TestNonTransactionalCarbonTable extends QueryTest with BeforeAndAfterAll {
          | STORED AS carbondata
          | LOCATION '$writerPath'
       """.stripMargin)
-
+    sql("select *from sdkOutputTable").show(false)
+    sql("select *from sdkOutputTable where age=0").show(false)
+    sql("select *from sdkOutputTable where height=0.0").show(false)
     sql("drop table if exists t1")
     sql("create table if not exists t1 (name string, age int, height double) STORED AS carbondata")
     var i = 0

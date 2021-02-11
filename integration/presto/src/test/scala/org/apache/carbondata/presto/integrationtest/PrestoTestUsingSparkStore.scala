@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 
+/*
 package org.apache.carbondata.presto.integrationtest
 
 import java.io.{File}
@@ -421,3 +422,4 @@ class PrestoTestUsingSparkStore
   }
 
 }
+*/

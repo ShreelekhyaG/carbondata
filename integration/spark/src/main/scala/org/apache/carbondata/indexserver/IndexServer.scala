@@ -248,7 +248,9 @@ object IndexServer extends ServerInterface {
     if (serverIp.isEmpty) {
       throw new RuntimeException(s"Please set the server IP to use Index Cache Server")
     } else {
-      CarbonSessionUtil.createCarbonSession()
+    //  Future {
+        CarbonSessionUtil.createCarbonSession()
+   //   }
       LOGGER.info("Starting Index Cache Server")
       val conf = new Configuration()
       val server: RPC.Server = new RPC.Builder(conf).setInstance(this)
