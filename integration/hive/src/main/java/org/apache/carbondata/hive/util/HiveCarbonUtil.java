@@ -168,7 +168,19 @@ public class HiveCarbonUtil {
     }
     CarbonLoadModelBuilder carbonLoadModelBuilder = new CarbonLoadModelBuilder(carbonTable);
     Map<String, String> options = new HashMap<>();
-    options.put("fileheader", Strings.mkString(columns, ","));
+    boolean ifAllColumnExists = true;
+    if (carbonTable.isHivePartitionTable()) {
+      List<String> columnList = Arrays.asList(columns);
+      for (ColumnSchema columnSchema : carbonTable.getPartitionInfo().getColumnSchemaList()) {
+        if (!columnList.contains(columnSchema.getColumnName())) {
+          ifAllColumnExists = false;
+          break;
+        }
+      }
+    }
+    if (ifAllColumnExists) {
+      options.put("fileheader", Strings.mkString(columns, ","));
+    }
     try {
       loadModel = carbonLoadModelBuilder.build(options, System.currentTimeMillis(), "");
     } catch (InvalidLoadOptionException | IOException e) {

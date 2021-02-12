@@ -19,14 +19,17 @@ package org.apache.carbondata.hive;
 
 import java.io.IOException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.metadata.schema.PartitionInfo;
+import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.ObjectSerializationUtil;
 import org.apache.carbondata.core.util.ThreadLocalSessionInfo;
@@ -34,9 +37,11 @@ import org.apache.carbondata.hadoop.api.CarbonTableOutputFormat;
 import org.apache.carbondata.hadoop.internal.ObjectArrayWritable;
 import org.apache.carbondata.hive.util.HiveCarbonUtil;
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel;
+import org.apache.carbondata.processing.util.TableOptionConstant;
 
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.hive.conf.HiveConf;
 import org.apache.hadoop.hive.ql.exec.FileSinkOperator;
 import org.apache.hadoop.hive.ql.io.HiveOutputFormat;
 import org.apache.hadoop.io.NullWritable;
@@ -75,6 +80,9 @@ public class MapredCarbonOutputFormat<T> extends CarbonTableOutputFormat
     CarbonLoadModel carbonLoadModel = null;
     // Try to get loadmodel from JobConf.
     String encodedString = jc.get(LOAD_MODEL);
+    System.out.println(jc.get(HiveConf.ConfVars.DEFAULTPARTITIONNAME.varname));
+    System.out.println("=======");
+    System.out.println(tableProperties.get(HiveConf.ConfVars.DEFAULTPARTITIONNAME.varname));
     if (encodedString != null) {
       carbonLoadModel =
           (CarbonLoadModel) ObjectSerializationUtil.convertStringToObject(encodedString);
@@ -117,10 +125,24 @@ public class MapredCarbonOutputFormat<T> extends CarbonTableOutputFormat
         partitionInfo != null ? partitionInfo.getColumnSchemaList().size() : 0;
     String updatedFilePath = FileFactory.getUpdatedFilePath(finalOutPath.toString());
     if (carbonLoadModel.getCarbonDataLoadSchema().getCarbonTable().isHivePartitionTable()) {
-      carbonLoadModel.getMetrics().addToPartitionPath(updatedFilePath);
+      assert partitionInfo != null;
+      String partitionLoc = updatedFilePath.substring(
+          carbonLoadModel.getCarbonDataLoadSchema().getCarbonTable().getTablePath().length());
+      partitionLoc = partitionLoc.substring(partitionLoc.indexOf("/") + 1);
+      String[] split = partitionLoc.split("/");
+      String partitionPath = "";
+      for (int i = 0; i < partitionInfo.getColumnSchemaList().size(); i++) {
+        partitionPath = CarbonCommonConstants.FILE_SEPARATOR + partitionPath + split[i]
+            + CarbonCommonConstants.FILE_SEPARATOR;
+      }
+      partitionPath =
+          carbonLoadModel.getCarbonDataLoadSchema().getCarbonTable().getTablePath() + partitionPath;
+      carbonLoadModel.getMetrics().addToPartitionPath(partitionPath);
       carbonLoadModel.setHivePartitionTable(true);
-      context.getConfiguration().set("carbon.outputformat.writepath", updatedFilePath);
+      context.getConfiguration().set("carbon.outputformat.writepath", partitionPath);
       carbonLoadModel.setDirectWriteToHdfs(true);
+//      carbonLoadModel
+//          .setBadRecordsAction(TableOptionConstant.BAD_RECORDS_ACTION.getName() + ",force");
     }
     CarbonTableOutputFormat.setLoadModel(jc, carbonLoadModel);
     org.apache.hadoop.mapreduce.RecordWriter<NullWritable, ObjectArrayWritable> re =
@@ -133,11 +155,26 @@ public class MapredCarbonOutputFormat<T> extends CarbonTableOutputFormat
           if (isHivePartitionedTable) {
             Object[] actualRow = ((CarbonHiveRow) writable).getData();
             Object[] newData = Arrays.copyOf(actualRow, actualRow.length + partitionColumn);
-            String[] partitionValues = finalOutPath.toString().substring(tablePath.length())
+            String partitionPth = finalOutPath.toString().substring(tablePath.length());
+            partitionPth = unescapePathName(partitionPth);
+            String[] partitionValues = partitionPth
                 .split("/");
+            List<String> measureColumns = new ArrayList<>();
+            for (ColumnSchema columnSchema : partitionInfo.getColumnSchemaList()) {
+              if (!columnSchema.isDimensionColumn()) {
+                measureColumns.add(columnSchema.getColumnName());
+              }
+            }
             for (int j = 0, i = actualRow.length; j < partitionValues.length; j++) {
               if (partitionValues[j].contains("=")) {
-                newData[i++] = partitionValues[j].split("=")[1];
+                String[] partitionSplit = partitionValues[j].split("=");
+                String data = partitionSplit[1];
+                String defaultPartition = jc.get(HiveConf.ConfVars.DEFAULTPARTITIONNAME.varname);
+                if (null != defaultPartition && defaultPartition.equalsIgnoreCase(data)
+                    && measureColumns.contains(partitionSplit[0])) {
+                  data = null;
+                }
+                newData[i++] = data;
               }
             }
             objectArrayWritable.set(newData);
@@ -160,6 +197,28 @@ public class MapredCarbonOutputFormat<T> extends CarbonTableOutputFormat
         }
       }
     };
+  }
+
+  public static String unescapePathName(String path) {
+    StringBuilder sb = new StringBuilder();
+    for (int i = 0; i < path.length(); i++) {
+      char c = path.charAt(i);
+      if (c == '%' && i + 2 < path.length()) {
+        int code = -1;
+        try {
+          code = Integer.parseInt(path.substring(i + 1, i + 3), 16);
+        } catch (Exception e) {
+          code = -1;
+        }
+        if (code >= 0) {
+          sb.append((char) code);
+          i += 2;
+          continue;
+        }
+      }
+      sb.append(c);
+    }
+    return sb.toString();
   }
 
 }

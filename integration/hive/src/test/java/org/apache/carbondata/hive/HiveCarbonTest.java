@@ -78,14 +78,30 @@ public class HiveCarbonTest extends HiveTestUtils {
 
    // statement.execute("CREATE TABLE carbon_table1(shortField SMALLINT, intField INT) partitioned by (stringField STRING, age int, age1 int)stored by 'org.apache.carbondata.hive.CarbonStorageHandler'");
  //   statement.execute("insert into carbon_table1 values(1,2,'ab',3,4)");
-    statement.execute("CREATE TABLE carbon_table1(shortField SMALLINT, intField INT) partitioned by (stringField STRING, age int, age1 int)stored by 'org.apache.carbondata.hive.CarbonStorageHandler'");
+  //  statement.execute("CREATE TABLE carbon_table1(shortField SMALLINT, intField INT) partitioned by (stringField STRING, age int, age1 int)stored by 'org.apache.carbondata.hive.CarbonStorageHandler'");
 //    statement.execute("insert into carbon_table1 values(1,2,'ab',3,4)");
 //    statement.execute("insert into carbon_table1 values(1,2,'ab',3,4)");
+
+    statement.execute("CREATE TABLE carbon_table1(shortField SMALLINT, intField INT) partitioned by (stringField date, stringField1 date)stored by 'org.apache.carbondata.hive.CarbonStorageHandler'");
+//    statement.execute("insert into carbon_table1 partition(stringField='ab') select 1,2");
+//    statement.execute("insert into carbon_table1 values(1,2,'2018-01-19 13:02:02.724', '2018-01-20 13:02:02.724')");
+    statement.execute("insert into carbon_table1 values(1,2,'2018-01-19', '2018-01-20')");
 
     //    statement.execute("insert overwrite table carbon_table1 values(1,2,'abc',3,4)");
 
-    statement.execute("insert into carbon_table1 values(1,2,'abc',4,5),(1,2,'abc1',4,6)");
-//    statement.executeQuery("select * from carbon_table1");
+//    statement.execute("insert into carbon_table1 values(1,2,'abc',4,5),(1,2,'abc1',4,6)");
+//    statement.execute("insert into carbon_table1 values(1,2,'abc'),(1,2,'')");
+
+    //    statement.execute("drop table if exists carbon_table2");
+//    statement.execute("CREATE TABLE carbon_table2(shortField SMALLINT, intField INT) partitioned by (stringField STRING, age int, age1 int)stored by 'org.apache.carbondata.hive.CarbonStorageHandler'");
+    statement.execute("select * from carbon_table1");
+//    statement.execute("select count(*) from carbon_table1");
+//
+//    statement.execute("insert into carbon_table2 select * from carbon_table1");
+    
+    
+    
+    //    statement.executeQuery("select * from carbon_table1");
 
 
 //    statement.execute("drop table if exists hive_table1");
@@ -101,6 +117,16 @@ public class HiveCarbonTest extends HiveTestUtils {
 //        connection.createStatement().executeQuery("select * from carbon_table1"));
 //    checkAnswer(statement.executeQuery("select * from hive_table1 where stringField='ab'"),
 //        connection.createStatement().executeQuery("select * from carbon_table1 where stringField='ab'"));
+
+  }
+
+  @Test
+  public void verifyDataLoad() throws Exception {
+    statement.execute("drop table if exists carbon_test");
+    statement.execute("create table carbon_test(id string, name string) partitioned by (record_date int) stored by 'org.apache.carbondata.hive.CarbonStorageHandler'");
+    statement.execute("insert into carbon_test select '1','kk',11");
+    statement.execute("insert into carbon_test select '1','kk',unix_timestamp('2018-02-05','yyyy-MM-dd') as record_date");
+    statement.execute("select count(*) from carbon_test");
 
   }
 

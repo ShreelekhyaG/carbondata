@@ -123,6 +123,7 @@ public class HiveEmbeddedServer2 {
     conf.set("hive.scratch.dir.permission", "777");
     conf.setVar(ConfVars.SCRATCHDIRPERMISSION, "777");
 
+//    conf.set("hive.exec.default.partition.name", "helloolloo");
     conf.set("hive.metastore.warehouse.dir", scratchDir + "/warehouse");
     conf.set("hive.metastore.metadb.dir", scratchDir + "/metastore_db");
     conf.set("hive.exec.scratchdir", scratchDir);

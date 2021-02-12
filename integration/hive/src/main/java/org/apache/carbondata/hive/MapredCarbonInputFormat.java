@@ -21,6 +21,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
@@ -132,14 +133,18 @@ public class MapredCarbonInputFormat extends CarbonTableInputFormat<ArrayWritabl
     } catch (Exception e) {
       throw new IOException("Unable read Carbon Schema: ", e);
     }
-    List<String> partitionNames = new ArrayList<>();
     if (carbonTable.isHivePartitionTable()) {
-      String partitionPath =
-          FileFactory.getCarbonFile(jobContext.getConfiguration().get(FileInputFormat.INPUT_DIR))
-              .getAbsolutePath();
-      partitionNames.add(partitionPath.substring(carbonTable.getTablePath().length()));
       List<PartitionSpec> partitionSpec = new ArrayList<>();
-      partitionSpec.add(new PartitionSpec(partitionNames, partitionPath));
+      String[] partitionsList =
+          jobContext.getConfiguration().get(FileInputFormat.INPUT_DIR).split(",");
+      for (String partition : partitionsList) {
+        String partitionPath =
+            FileFactory.getCarbonFile(FileFactory.getUpdatedFilePath(partition)).getAbsolutePath();
+        String partitionLoc = partitionPath.substring(carbonTable.getTablePath().length());
+        partitionLoc = partitionLoc.substring(partitionLoc.indexOf("/") + 1);
+        List<String> partitionNames = new ArrayList<>(Arrays.asList(partitionLoc.split("/")));
+        partitionSpec.add(new PartitionSpec(partitionNames, partitionPath));
+      }
       setPartitionsToPrune(jobContext.getConfiguration(), partitionSpec);
     }
     try {
