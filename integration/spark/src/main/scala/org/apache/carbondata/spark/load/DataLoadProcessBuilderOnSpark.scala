@@ -145,6 +145,8 @@ object DataLoadProcessBuilderOnSpark {
       configuration.getDataLoadProperty(CarbonCommonConstants.LOAD_GLOBAL_SORT_PARTITIONS))
     if (numPartitions <= 0) {
       numPartitions = convertRDD.partitions.length
+    } else {
+      convertRDD.partitions
     }
 
     // Because if the number of partitions greater than 1, there will be action operator(sample) in
@@ -164,6 +166,7 @@ object DataLoadProcessBuilderOnSpark {
 
     // 4. Write
     sc.runJob(sortRDD, (context: TaskContext, rows: Iterator[CarbonRow]) => {
+    //  ThreadLocalSessionInfo.setConfigurationToCurrentThread(conf.value.value)
       setTaskListener(model.getTableName, model.getSegmentId, segmentMetaDataAccumulator)
       val loadModel = modelBroadcast.value.getCopyWithTaskNo(context.partitionId.toString)
       loadModel.setMetrics(new DataLoadMetrics())
@@ -229,6 +232,8 @@ object DataLoadProcessBuilderOnSpark {
       configuration.getDataLoadProperty(CarbonCommonConstants.LOAD_GLOBAL_SORT_PARTITIONS))
     if (numPartitions <= 0) {
       numPartitions = originRDD.partitions.length
+    } else {
+      originRDD.partitions
     }
     // Because if the number of partitions greater than 1, there will be action operator
     // (sample) in

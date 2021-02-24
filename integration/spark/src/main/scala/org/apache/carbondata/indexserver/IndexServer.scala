@@ -283,6 +283,24 @@ object IndexServer extends ServerInterface {
     }
   }
 
+  private def createCarbonSession(): SparkSession = {
+    val spark = SparkSession
+      .builder().config(new SparkConf())
+      .appName("DistributedIndexServer")
+      .enableHiveSupport()
+      .config("spark.sql.extensions", "org.apache.spark.sql.CarbonExtensions")
+      .getOrCreate()
+    CarbonEnv.getInstance(spark)
+
+    SparkSession.setActiveSession(spark)
+    SparkSession.setDefaultSession(spark)
+    if (spark.sparkContext.getConf
+      .get("spark.dynamicAllocation.enabled", "false").equalsIgnoreCase("true")) {
+      throw new RuntimeException("Index server is not supported with dynamic allocation enabled")
+    }
+    spark
+  }
+
   /**
    * @return Return a new Client to communicate with the Index Server.
    */

@@ -156,7 +156,7 @@ class CarbonScanRDD[T: ClassTag](
             inputFormat.setReadCommittedScope(readCommittedScope)
           case _ =>
         }
-  //      SparkSession.setActiveSession(spark)
+   //     SparkSession.setActiveSession(spark)
         splits = format.getSplits(job)
       }
       getSplitsEndTime = System.currentTimeMillis()
