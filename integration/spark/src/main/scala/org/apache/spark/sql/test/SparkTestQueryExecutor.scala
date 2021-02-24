@@ -89,6 +89,7 @@ object SparkTestQueryExecutor {
       .addProperty(CarbonCommonConstants.CARBON_INDEX_SERVER_PORT, "9997")
       .addProperty(CarbonCommonConstants.CARBON_ENABLE_INDEX_SERVER, "true")
       .addProperty(CarbonCommonConstants.CARBON_DISABLE_INDEX_SERVER_FALLBACK, "true")
+      .addProperty(CarbonCommonConstants.CARBON_MAX_EXECUTOR_THREADS_FOR_BLOCK_PRUNING, "1")
     //  .addProperty(CarbonCommonConstants.CARBON_INDEXSEVER_ENABLE_PREPRIMING, "true")
     IndexServer.main(Array())
   }
