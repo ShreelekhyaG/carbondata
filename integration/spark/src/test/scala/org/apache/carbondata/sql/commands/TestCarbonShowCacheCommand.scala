@@ -29,6 +29,7 @@ import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandExcepti
 import org.apache.carbondata.core.cache.CacheProvider
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
+import org.apache.carbondata.core.util.CarbonProperties
 
 class TestCarbonShowCacheCommand extends QueryTest with BeforeAndAfterAll {
   override protected def beforeAll(): Unit = {
@@ -198,7 +199,8 @@ class TestCarbonShowCacheCommand extends QueryTest with BeforeAndAfterAll {
     assertResult(0)(indexCacheInfo.length)
   }
 
-  test("show metacache on table") {
+  // Exclude when running with index server, as show cache rows count varies.
+  test("show metacache on table", true) {
     sql("use cache_db").collect()
 
     // Table with Index & Bloom filter
@@ -222,6 +224,20 @@ class TestCarbonShowCacheCommand extends QueryTest with BeforeAndAfterAll {
     val result5 = sql("show metacache on table cache_5").collect()
     assertResult(1)(result5.length)
     assertResult("5/5 index files cached")(result5(0).getString(2))
+  }
+
+  // Runs only when index server is enabled.
+  test("test metacache with prepriming", false) {
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_INDEXSEVER_ENABLE_PREPRIMING, "true")
+    sql("drop table if exists maintable1")
+    sql("create table maintable1(a string, b int, c string) stored as carbondata")
+    sql("insert into maintable1 select 'k',1,'k'")
+    val showCache = sql("SHOW METACACHE on table maintable1").collect()
+    assert(showCache(1).get(2).toString.equalsIgnoreCase("1/1 index files cached"))
+    sql("drop table if exists maintable1")
+    CarbonProperties.getInstance()
+      .removeProperty(CarbonCommonConstants.CARBON_INDEXSEVER_ENABLE_PREPRIMING)
   }
 
   test("test index files cached for table with single partition") {
@@ -352,7 +368,8 @@ class TestCarbonShowCacheCommand extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists carbonTable")
   }
 
-  test("test cache expiration using expiringMap with bloom") {
+  // Exclude when running with index server, as show cache rows count varies.
+  test("test cache expiration using expiringMap with bloom", true) {
     sql("drop table if exists carbonTable")
     sql("create table carbonTable(col1 int, col2 string,col3 string) stored as carbondata " +
         "tblproperties('index_cache_expiration_seconds'='1')")
