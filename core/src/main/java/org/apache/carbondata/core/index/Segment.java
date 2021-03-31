@@ -87,11 +87,6 @@ public class Segment implements Serializable, Writable {
   private boolean isExternalSegment = false;
 
   /**
-   * To identify if it is an externally added segment or not.
-   */
-  private boolean isExternalSegment = false;
-
-  /**
    * Properties of the segment.
    */
   private transient Map<String, String> options;
