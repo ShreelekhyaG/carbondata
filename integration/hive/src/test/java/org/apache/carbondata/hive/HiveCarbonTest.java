@@ -55,16 +55,16 @@ public class HiveCarbonTest extends HiveTestUtils {
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_UNSAFE_SORT, "false");
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_WRITTEN_BY_APPNAME, "hive");
     statement = connection.createStatement();
-    statement.execute("drop table if exists hive_carbon_table1");
-    statement.execute("drop table if exists hive_carbon_table2");
-    statement.execute("drop table if exists hive_carbon_table3");
-    statement.execute("drop table if exists hive_carbon_table4");
-    statement.execute("drop table if exists hive_carbon_table5");
+//    statement.execute("drop table if exists hive_carbon_table1");
+//    statement.execute("drop table if exists hive_carbon_table2");
+//    statement.execute("drop table if exists hive_carbon_table3");
+//    statement.execute("drop table if exists hive_carbon_table4");
+//    statement.execute("drop table if exists hive_carbon_table5");
     statement.execute("drop table if exists hive_table");
-    statement.execute("drop table if exists hive_table_complex");
+   // statement.execute("drop table if exists hive_table_complex");
     String csvFilePath = (resourceDirectoryPath + CSV).replace("\\", "/");
-    String complexFilePath = (resourceDirectoryPath + COMPLEX).replace("\\", "/");
-    statement.execute(String.format("CREATE external TABLE hive_table_complex(arrayField  ARRAY<STRING>, mapField MAP<String, String>, structField STRUCT<city: String, pincode: int>) ROW FORMAT SERDE 'org.apache.hadoop.hive.contrib.serde2.MultiDelimitSerDe' WITH SERDEPROPERTIES ('field.delim'=',', 'collection.delim'='$', 'mapkey.delim'='@') location '%s' TBLPROPERTIES('external.table.purge'='false')", complexFilePath));
+  //  String complexFilePath = (resourceDirectoryPath + COMPLEX).replace("\\", "/");
+  //  statement.execute(String.format("CREATE external TABLE hive_table_complex(arrayField  ARRAY<STRING>, mapField MAP<String, String>, structField STRUCT<city: String, pincode: int>) ROW FORMAT SERDE 'org.apache.hadoop.hive.contrib.serde2.MultiDelimitSerDe' WITH SERDEPROPERTIES ('field.delim'=',', 'collection.delim'='$', 'mapkey.delim'='@') location '%s' TBLPROPERTIES('external.table.purge'='false')", complexFilePath));
     statement.execute(String.format("CREATE external TABLE hive_table(shortField SMALLINT, intField INT, bigintField BIGINT, doubleField DOUBLE, stringField STRING, timestampField TIMESTAMP, decimalField DECIMAL(18,2), dateField DATE, charField CHAR(5), floatField FLOAT) ROW FORMAT DELIMITED FIELDS TERMINATED BY ',' location '%s' TBLPROPERTIES ('external.table.purge'='false')", csvFilePath));
 
   }
@@ -75,17 +75,13 @@ public class HiveCarbonTest extends HiveTestUtils {
 
     System.setProperty("log4j2.debug","true");
     statement.execute("drop table if exists carbon_table1");
-
-   // statement.execute("CREATE TABLE carbon_table1(shortField SMALLINT, intField INT) partitioned by (stringField STRING, age int, age1 int)stored by 'org.apache.carbondata.hive.CarbonStorageHandler'");
- //   statement.execute("insert into carbon_table1 values(1,2,'ab',3,4)");
-  //  statement.execute("CREATE TABLE carbon_table1(shortField SMALLINT, intField INT) partitioned by (stringField STRING, age int, age1 int)stored by 'org.apache.carbondata.hive.CarbonStorageHandler'");
-//    statement.execute("insert into carbon_table1 values(1,2,'ab',3,4)");
-//    statement.execute("insert into carbon_table1 values(1,2,'ab',3,4)");
-
-    statement.execute("CREATE TABLE carbon_table1(shortField SMALLINT, intField INT) partitioned by (stringField date, stringField1 date)stored by 'org.apache.carbondata.hive.CarbonStorageHandler'");
-//    statement.execute("insert into carbon_table1 partition(stringField='ab') select 1,2");
+  //  statement.execute("CREATE TABLE carbon_table1(shortField SMALLINT, intField INT) partitioned by (stringField date, stringField1 date)stored by 'org.apache.carbondata.hive.CarbonStorageHandler'");
+    statement.execute("CREATE TABLE carbon_table1(shortField SMALLINT , intField INT, bigintField BIGINT , doubleField DOUBLE, stringField STRING, timestampField TIMESTAMP, decimalField DECIMAL(18,2), dateField DATE, charField CHAR(5)) partitioned by (floatField FLOAT) stored by 'org.apache.carbondata.hive.CarbonStorageHandler'");
+    //    statement.execute("insert into carbon_table1 partition(stringField='ab') select 1,2");
 //    statement.execute("insert into carbon_table1 values(1,2,'2018-01-19 13:02:02.724', '2018-01-20 13:02:02.724')");
-    statement.execute("insert into carbon_table1 values(1,2,'2018-01-19', '2018-01-20')");
+//    statement.execute("insert into carbon_table1 values(1,2,'2018-01-19', '2018-01-20')");
+    statement.execute("insert into carbon_table1 values(1,10,1100,48.4,'spark','2015-04-23 12:01:01',1.23,'2015-04-23','aaa',2.5)");
+    statement.execute("insert into carbon_table1 values(5,17,1140,43.4,'spark','2015-07-27 12:01:02',3.45,'2015-07-27','bbb',3.5)");
 
     //    statement.execute("insert overwrite table carbon_table1 values(1,2,'abc',3,4)");
 
@@ -113,8 +109,8 @@ public class HiveCarbonTest extends HiveTestUtils {
 ////
 ////    statement.execute("insert into hive_table1 values(1,2,'abc',4,5),(1,2,'abc',4,6)");
 ////    statement.executeQuery("select * from hive_table1");
-//    checkAnswer(statement.executeQuery("select * from hive_table1"),
-//        connection.createStatement().executeQuery("select * from carbon_table1"));
+    checkAnswer(statement.executeQuery("select * from hive_table"),
+        connection.createStatement().executeQuery("select * from carbon_table1"));
 //    checkAnswer(statement.executeQuery("select * from hive_table1 where stringField='ab'"),
 //        connection.createStatement().executeQuery("select * from carbon_table1 where stringField='ab'"));
 

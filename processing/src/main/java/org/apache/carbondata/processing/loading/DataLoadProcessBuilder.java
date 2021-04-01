@@ -239,7 +239,7 @@ public final class DataLoadProcessBuilder {
         loadModel.getBinaryDecoder());
     configuration.setDataLoadProperty(
         CarbonLoadOptionConstants.ENABLE_CARBON_LOAD_DIRECT_WRITE_TO_STORE_PATH,
-        loadModel.isDirectWriteToHdfs());
+        loadModel.isDirectWriteToStorePath());
     if (loadModel.isLoadWithoutConverterWithoutReArrangeStep()) {
       configuration.setDataLoadProperty(DataLoadProcessorConstants.NO_REARRANGE_OF_ROWS,
           loadModel.isLoadWithoutConverterWithoutReArrangeStep());
