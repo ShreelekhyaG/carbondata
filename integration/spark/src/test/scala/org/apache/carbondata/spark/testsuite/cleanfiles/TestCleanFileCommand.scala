@@ -30,7 +30,6 @@ import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
-import org.apache.carbondata.core.metadata.CarbonMetadata
 import org.apache.carbondata.core.statusmanager.{SegmentStatus, SegmentStatusManager}
 import org.apache.carbondata.core.util.{ByteUtil, CarbonProperties, CarbonTestUtil}
 import org.apache.carbondata.core.util.path.CarbonTablePath
@@ -522,24 +521,6 @@ class TestCleanFileCommand extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists cleantest")
   }
 
-  test("test clean files after index merge and check segment count") {
-    CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_MERGE_INDEX_IN_SEGMENT, "false")
-    sql("drop table if exists cleantest")
-    sql(s"create table cleantest(id int, issue date) STORED AS carbondata")
-    sql(s"""CREATE INDEX si_cleantest on cleantest(issue) as 'carbondata' """)
-    sql("insert into table cleantest select '1','2000-02-01'")
-    assert(getSegmentFileCount("default_cleantest") == 1)
-    CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_MERGE_INDEX_IN_SEGMENT, "true")
-    sql("ALTER TABLE cleantest COMPACT 'SEGMENT_INDEX'").collect()
-    assert(getSegmentFileCount("default_cleantest") == 2)
-    assert(getSegmentFileCount("default_si_cleantest") == 2)
-    sql("DROP TABLE IF EXISTS cleantest")
-    CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_MERGE_INDEX_IN_SEGMENT,
-        CarbonCommonConstants.CARBON_MERGE_INDEX_IN_SEGMENT_DEFAULT)
-  }
 
   def editTableStatusFile(carbonTablePath: String) : Unit = {
     // original table status file
@@ -612,11 +593,5 @@ class TestCleanFileCommand extends QueryTest with BeforeAndAfterAll {
     sql(s"""INSERT INTO CLEANTEST SELECT "abc", 1, "name"""")
     sql(s"""INSERT INTO CLEANTEST SELECT "abc", 1, "name"""")
     sql(s"""INSERT INTO CLEANTEST SELECT "abc", 1, "name"""")
-  }
-
-  def getSegmentFileCount(tableName: String): Int = {
-    val carbonTable = CarbonMetadata.getInstance().getCarbonTable("default_cleantest")
-    val segmentsPath = CarbonTablePath.getSegmentFilesLocation(carbonTable.getTablePath)
-    FileFactory.getCarbonFile(segmentsPath).listFiles(true).size()
   }
 }

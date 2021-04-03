@@ -114,17 +114,6 @@ case class CarbonAlterTableAddHivePartitionCommand(
         loadModel.setCarbonDataLoadSchema(new CarbonDataLoadSchema(table))
         // create operationContext to fire load events
         val operationContext: OperationContext = new OperationContext
-        val (tableIndexes, indexOperationContext) = CommonLoadUtils.firePreLoadEvents(
-          sparkSession = sparkSession,
-          carbonLoadModel = loadModel,
-          uuid = "",
-          factPath = "",
-          null,
-          null,
-          isOverwriteTable = false,
-          isDataFrame = false,
-          updateModel = None,
-          operationContext = operationContext)
         // Create new entry in tablestatus file
         CarbonLoaderUtil.readAndUpdateLoadProgressInTableMeta(loadModel, false)
         // Normally, application will use Carbon SDK to write files into a partition folder, then
@@ -179,6 +168,17 @@ case class CarbonAlterTableAddHivePartitionCommand(
           throw new UnsupportedOperationException(
             "Schema of index files located in location is not matching with current table schema")
         }
+        val (tableIndexes, indexOperationContext) = CommonLoadUtils.firePreLoadEvents(
+          sparkSession = sparkSession,
+          carbonLoadModel = loadModel,
+          uuid = "",
+          factPath = "",
+          new util.HashMap[String, String](),
+          new util.HashMap[String, String](),
+          isOverwriteTable = false,
+          isDataFrame = false,
+          updateModel = None,
+          operationContext = operationContext)
         SegmentFileStore.writeSegmentFile(segmentFile, segmentPath)
         CarbonLoaderUtil.populateNewLoadMetaEntry(
           newMetaEntry,

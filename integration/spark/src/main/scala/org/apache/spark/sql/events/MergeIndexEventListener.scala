@@ -30,8 +30,10 @@ import org.apache.spark.util.MergeIndexUtil
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.locks.{CarbonLockFactory, LockUsage}
+import org.apache.carbondata.core.metadata.SegmentFileStore
 import org.apache.carbondata.core.statusmanager.{FileFormat, SegmentStatusManager}
 import org.apache.carbondata.core.util.{DataLoadMetrics, ObjectSerializationUtil}
+import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.events._
 import org.apache.carbondata.processing.loading.events.LoadEvents.LoadTablePreStatusUpdateEvent
 import org.apache.carbondata.processing.merger.CarbonDataMergerUtil
@@ -121,10 +123,10 @@ class MergeIndexEventListener extends OperationEventListener with Logging {
                 .put(loadMetadataDetails.getLoadName,
                   String.valueOf(loadMetadataDetails.getLoadStartTime))
             })
-            val segmentsToMerge =
+            val validSegments =
+              CarbonDataMergerUtil.getValidSegmentList(carbonMainTable).asScala
+            var segmentsToMerge =
               if (alterTableMergeIndexEvent.alterTableModel.customSegmentIds.isEmpty) {
-                val validSegments =
-                  CarbonDataMergerUtil.getValidSegmentList(carbonMainTable).asScala
                 val validSegmentIds: mutable.Buffer[String] = mutable.Buffer[String]()
                 validSegments.foreach { segment =>
                   // do not add ROW_V1 format
@@ -139,6 +141,23 @@ class MergeIndexEventListener extends OperationEventListener with Logging {
                   .get
                   .filterNot(streamingSegment.contains(_))
               }
+            validSegments.foreach { segment =>
+              if (segmentsToMerge.contains(segment.getSegmentNo)) {
+                val segmentFile = segment.getSegmentFileName
+                val sfs = new SegmentFileStore(carbonMainTable.getTablePath, segmentFile)
+                if (sfs.getSegmentFile != null) {
+                  val indexFiles = sfs.getIndexCarbonFiles
+                  val segmentPath = CarbonTablePath
+                    .getSegmentPath(carbonMainTable.getTablePath, segment.getSegmentNo)
+                  if (indexFiles.size() == 0) {
+                    LOGGER.warn("No index files present in path: " + segmentPath + " to merge")
+                    // call merge if segments have index files
+                    segmentsToMerge = segmentsToMerge.toStream
+                      .filterNot(s => s.equals(segment.getSegmentNo)).toList
+                  }
+                }
+              }
+            }
             // in case of merge index file creation using Alter DDL command
             // readFileFooterFromCarbonDataFile flag should be true. This flag is check for legacy
             // store (store <= 1.1 version) and create merge Index file as per new store so that

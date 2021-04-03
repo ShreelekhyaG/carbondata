@@ -499,7 +499,6 @@ public class SegmentFileStore {
       String metadataInstance = gsonObjectToWrite.toJson(segmentFile);
       brWriter.write(metadataInstance);
       brWriter.flush();
-      LOGGER.info("Segment file: " + path + " write is successfull");
     } catch (IOException ie) {
       LOGGER.error("Error message: " + ie.getLocalizedMessage());
       fileWrite.setFailed();

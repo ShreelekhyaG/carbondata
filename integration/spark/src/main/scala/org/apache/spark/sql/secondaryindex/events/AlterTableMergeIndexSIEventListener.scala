@@ -87,7 +87,21 @@ class AlterTableMergeIndexSIEventListener
                   .asScala
                 val validSegmentIds: mutable.Buffer[String] = mutable.Buffer[String]()
                 validSegments.foreach { segment =>
-                  validSegmentIds += segment.getSegmentNo
+                  val segmentFile = segment.getSegmentFileName
+                  val sfs = new SegmentFileStore(indexCarbonTable.getTablePath, segmentFile)
+                  if (sfs.getSegmentFile != null) {
+                    val indexFiles = sfs.getIndexCarbonFiles
+                    val segmentPath = CarbonTablePath
+                      .getSegmentPath(indexCarbonTable.getTablePath, segment.getSegmentNo)
+                    if (indexFiles.size() == 0) {
+                      LOGGER.warn("No index files present in path: " + segmentPath + " to merge")
+                    } else {
+                      // call merge only if segments having index files
+                      validSegmentIds += segment.getSegmentNo
+                    }
+                  } else {
+                    validSegmentIds += segment.getSegmentNo
+                  }
                 }
                 // Just launch job to merge index for all index tables
                 CarbonMergeFilesRDD.mergeIndexFiles(

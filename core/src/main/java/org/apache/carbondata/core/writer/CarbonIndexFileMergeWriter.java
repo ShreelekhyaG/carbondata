@@ -208,13 +208,8 @@ public class CarbonIndexFileMergeWriter {
       }
     }
     Map<String, byte[]> indexMap = fileStore.getCarbonIndexMap();
-    if (indexMap.size() == 0) {
-      LOGGER.warn("No index files present in path: " + segmentPath + " to merge");
-      return null;
-    }
     Map<String, List<String>> mergeToIndexFileMap = fileStore.getCarbonMergeFileToIndexFilesMap();
-    List<String> indexFilesList = new ArrayList<>(indexMap.keySet());
-    if (!mergeToIndexFileMap.containsValue(indexFilesList))   {
+    if (!mergeToIndexFileMap.containsValue(new ArrayList<>(indexMap.keySet())))   {
       writeMergeIndexFile(indexFileNamesTobeAdded, segmentPath, indexMap, segmentId, uuid);
       // If Alter merge index for old tables is triggered, do not delete index files immediately
       // to avoid index file not found during concurrent queries
