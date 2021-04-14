@@ -150,7 +150,7 @@ class MergeIndexEventListener extends OperationEventListener with Logging {
                   val segmentPath = CarbonTablePath
                     .getSegmentPath(carbonMainTable.getTablePath, segment.getSegmentNo)
                   if (indexFiles.size() == 0) {
-                    LOGGER.warn("No index files present in path: " + segmentPath + " to merge")
+                    LOGGER.warn(s"No index files present in path: $segmentPath to merge")
                     // call merge if segments have index files
                     segmentsToMerge = segmentsToMerge.toStream
                       .filterNot(s => s.equals(segment.getSegmentNo)).toList
