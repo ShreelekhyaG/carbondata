@@ -360,19 +360,8 @@ public class SegmentStatusManager {
         }
         return new Gson().fromJson(content, LoadMetadataDetails[].class);
       } catch (JsonSyntaxException | IOException ex) {
-        retry--;
-        if (retry == 0) {
-          // we have retried several times, throw this exception to make the execution failed
-          LOG.error("Failed to read table status file:" + tableStatusPath);
-          throw ex;
-        }
-        try {
-          LOG.warn("Failed to read table status file, retry count:" + retry);
-          // sleep for some time before retry
-          TimeUnit.SECONDS.sleep(READ_TABLE_STATUS_RETRY_TIMEOUT);
-        } catch (InterruptedException e) {
-          // ignored
-        }
+        String message = "Failed to read table status file: " + tableStatusPath;
+        tryWithRetryAndHandleException(retry, message, ex);
       }
     }
     return null;
@@ -636,25 +625,52 @@ public class SegmentStatusManager {
    * @throws IOException if IO errors
    */
   public static void writeLoadDetailsIntoFile(
-      String tableStatusPath,
-      LoadMetadataDetails[] listOfLoadFolderDetailsArray) throws IOException {
-    // When overwriting table status file, if process crashed, table status file
-    // will be in corrupted state. This can happen in an unstable environment,
-    // like in the cloud. To prevent the table corruption, user can enable following
-    // property to enable backup of the table status before overwriting it.
-    if (tableStatusPath.endsWith(CarbonTablePath.TABLE_STATUS_FILE) &&
-        CarbonProperties.isEnableTableStatusBackup()) {
-      backupTableStatus(tableStatusPath);
+      String tableStatusPath, LoadMetadataDetails[] listOfLoadFolderDetailsArray) {
+    int retry = CarbonLockUtil
+        .getLockProperty(CarbonCommonConstants.NUMBER_OF_TRIES_FOR_CARBON_LOCK,
+            CarbonCommonConstants.NUMBER_OF_TRIES_FOR_CARBON_LOCK_DEFAULT);
+    // When storing file in object store, writing of table status file
+    // may fail (receive IOException). So here we retry multiple times before throwing IOException.
+    while (retry > 0) {
+      try {
+        // When overwriting table status file, if process crashed, table status file
+        // will be in corrupted state. This can happen in an unstable environment,
+        // like in the cloud. To prevent the table corruption, user can enable following
+        // property to enable backup of the table status before overwriting it.
+        if (tableStatusPath.endsWith(CarbonTablePath.TABLE_STATUS_FILE) &&
+            CarbonProperties.isEnableTableStatusBackup()) {
+          backupTableStatus(tableStatusPath);
+        }
+        String content = new Gson().toJson(listOfLoadFolderDetailsArray);
+        mockForTest();
+        // make the table status file smaller by removing fields that are default value
+        for (LoadMetadataDetails loadMetadataDetails : listOfLoadFolderDetailsArray) {
+          loadMetadataDetails.removeUnnecessaryField();
+        }
+        // If process crashed during following write, table status file need to be
+        // manually recovered.
+        writeStringIntoFile(FileFactory.getUpdatedFilePath(tableStatusPath), content);
+      } catch (IOException e) {
+        String message = "Table status update has failed";
+        tryWithRetryAndHandleException(retry, message, e);
+      }
     }
-    String content = new Gson().toJson(listOfLoadFolderDetailsArray);
-    mockForTest();
-    // make the table status file smaller by removing fields that are default value
-    for (LoadMetadataDetails loadMetadataDetails : listOfLoadFolderDetailsArray) {
-      loadMetadataDetails.removeUnnecessaryField();
+  }
+
+  public static void tryWithRetryAndHandleException(int retry, String message, Exception e) {
+    retry--;
+    if (retry == 0) {
+      // we have retried several times, throw this exception to make the execution failed
+      LOG.error(message + ": " + e.getMessage());
+      throw new RuntimeException(message, e);
     }
-    // If process crashed during following write, table status file need to be
-    // manually recovered.
-    writeStringIntoFile(FileFactory.getUpdatedFilePath(tableStatusPath), content);
+    try {
+      LOG.warn("Table status update has failed, retry count:" + retry);
+      // sleep for some time before retry
+      TimeUnit.MILLISECONDS.sleep(10);
+    } catch (InterruptedException ex) {
+      // ignored
+    }
   }
 
   // a dummy func for mocking in testcase, which simulates IOException

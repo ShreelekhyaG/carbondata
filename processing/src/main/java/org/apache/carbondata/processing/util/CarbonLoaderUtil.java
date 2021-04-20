@@ -1157,11 +1157,24 @@ public final class CarbonLoaderUtil {
 
   public static SegmentFileStore.FolderDetails mergeIndexFilesInPartitionedTempSegment(
       CarbonTable table, String segmentId, String partitionPath, List<String> partitionInfo,
-      String uuid, String tempFolderPath, String currPartitionSpec) throws IOException {
+      String uuid, String tempFolderPath, String currPartitionSpec) {
     String tablePath = table.getTablePath();
-    return new CarbonIndexFileMergeWriter(table)
-        .mergeCarbonIndexFilesOfSegment(segmentId, tablePath, partitionPath, partitionInfo, uuid,
-            tempFolderPath, currPartitionSpec);
+    int retry = CarbonLockUtil
+        .getLockProperty(CarbonCommonConstants.NUMBER_OF_TRIES_FOR_CARBON_LOCK,
+            CarbonCommonConstants.NUMBER_OF_TRIES_FOR_CARBON_LOCK_DEFAULT);
+    // When storing file in object store, writing of merge index may fail (receive IOException).
+    // So here we retry multiple times before throwing IOException.
+    while (retry > 0) {
+      try {
+        return new CarbonIndexFileMergeWriter(table)
+            .mergeCarbonIndexFilesOfSegment(segmentId, tablePath, partitionPath, partitionInfo,
+                uuid, tempFolderPath, currPartitionSpec);
+      } catch (IOException e) {
+        String message = "Failed to merge index files in path: " + partitionPath;
+        SegmentStatusManager.tryWithRetryAndHandleException(retry, message, e);
+      }
+    }
+    return null;
   }
 
   /**

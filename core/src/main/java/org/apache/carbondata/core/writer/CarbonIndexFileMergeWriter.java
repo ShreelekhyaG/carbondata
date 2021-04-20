@@ -35,6 +35,7 @@ import org.apache.carbondata.core.fileoperations.FileWriteOperation;
 import org.apache.carbondata.core.index.Segment;
 import org.apache.carbondata.core.indexstore.PartitionSpec;
 import org.apache.carbondata.core.indexstore.blockletindex.SegmentIndexFileStore;
+import org.apache.carbondata.core.locks.CarbonLockUtil;
 import org.apache.carbondata.core.metadata.SegmentFileStore;
 import org.apache.carbondata.core.metadata.schema.indextable.IndexMetadata;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
@@ -82,43 +83,49 @@ public class CarbonIndexFileMergeWriter {
       String partitionPath) {
     Segment segment = Segment.getSegment(segmentId, tablePath);
     String segmentPath = CarbonTablePath.getSegmentPath(tablePath, segmentId);
-    try {
-      List<CarbonFile> indexFiles = new ArrayList<>();
-      SegmentFileStore sfs = null;
-      if (segment != null && segment.getSegmentFileName() != null) {
-        sfs = new SegmentFileStore(tablePath, segment.getSegmentFileName());
-        List<CarbonFile> indexCarbonFiles = sfs.getIndexCarbonFiles();
-        if (table.isHivePartitionTable()) {
-          // in case of partition table, merge index files of a partition
-          List<CarbonFile> indexFilesInPartition = new ArrayList<>();
-          for (CarbonFile indexCarbonFile : indexCarbonFiles) {
-            if (FileFactory.getUpdatedFilePath(indexCarbonFile.getParentFile().getPath())
-                .equals(partitionPath)) {
-              indexFilesInPartition.add(indexCarbonFile);
+    int retry = CarbonLockUtil
+        .getLockProperty(CarbonCommonConstants.NUMBER_OF_TRIES_FOR_CARBON_LOCK,
+            CarbonCommonConstants.NUMBER_OF_TRIES_FOR_CARBON_LOCK_DEFAULT);
+    // When storing file in object store, writing of merge index or table status file
+    // may fail (receive IOException). So here we retry multiple times before throwing IOException.
+    while (retry > 0) {
+      try {
+        List<CarbonFile> indexFiles = new ArrayList<>();
+        SegmentFileStore sfs = null;
+        if (segment != null && segment.getSegmentFileName() != null) {
+          sfs = new SegmentFileStore(tablePath, segment.getSegmentFileName());
+          List<CarbonFile> indexCarbonFiles = sfs.getIndexCarbonFiles();
+          if (table.isHivePartitionTable()) {
+            // in case of partition table, merge index files of a partition
+            List<CarbonFile> indexFilesInPartition = new ArrayList<>();
+            for (CarbonFile indexCarbonFile : indexCarbonFiles) {
+              if (FileFactory.getUpdatedFilePath(indexCarbonFile.getParentFile().getPath())
+                  .equals(partitionPath)) {
+                indexFilesInPartition.add(indexCarbonFile);
+              }
             }
+            indexFiles = indexFilesInPartition;
+          } else {
+            indexFiles = indexCarbonFiles;
           }
-          indexFiles = indexFilesInPartition;
+        }
+        if (sfs == null || indexFiles.isEmpty()) {
+          if (table.isHivePartitionTable()) {
+            segmentPath = partitionPath;
+          }
+          return writeMergeIndexFileBasedOnSegmentFolder(indexFileNamesTobeAdded,
+              isOldStoreIndexFilesPresent, segmentPath, segmentId, uuid, true);
         } else {
-          indexFiles = indexCarbonFiles;
+          return writeMergeIndexFileBasedOnSegmentFile(segmentId, indexFileNamesTobeAdded,
+              isOldStoreIndexFilesPresent, sfs,
+              indexFiles.toArray(new CarbonFile[0]), uuid, partitionPath);
         }
+      } catch (IOException e) {
+        String message = "Failed to merge index files in path: " + segmentPath;
+        SegmentStatusManager.tryWithRetryAndHandleException(retry, message, e);
       }
-      if (sfs == null || indexFiles.isEmpty()) {
-        if (table.isHivePartitionTable()) {
-          segmentPath = partitionPath;
-        }
-        return writeMergeIndexFileBasedOnSegmentFolder(indexFileNamesTobeAdded,
-            isOldStoreIndexFilesPresent, segmentPath, segmentId, uuid, true);
-      } else {
-        return writeMergeIndexFileBasedOnSegmentFile(segmentId, indexFileNamesTobeAdded,
-            isOldStoreIndexFilesPresent, sfs,
-            indexFiles.toArray(new CarbonFile[0]), uuid, partitionPath);
-      }
-    } catch (Exception e) {
-      String message =
-          "Failed to merge index files in path: " + segmentPath + ". " + e.getMessage();
-      LOGGER.error(message);
-      throw new RuntimeException(message, e);
     }
+    return null;
   }
 
   /**
