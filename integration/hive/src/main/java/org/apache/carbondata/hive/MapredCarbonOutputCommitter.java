@@ -26,6 +26,9 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import org.apache.carbondata.common.logging.LogServiceFactory;
@@ -143,7 +146,7 @@ public class MapredCarbonOutputCommitter extends OutputCommitter {
       CarbonLoadModel carbonLoadModel = MapredCarbonOutputFormat.getLoadModel(configuration);
       ThreadLocalSessionInfo.unsetAll();
       // create a map to hold list of index files mapped to a partition
-      Map<String, Set<String>> partitionIndexMap = new HashMap<>();
+      Map<String, List<String>> partitionIndexMap = new HashMap<>();
       CarbonTable carbonTable = carbonLoadModel.getCarbonDataLoadSchema().getCarbonTable();
       String tablePath = carbonTable.getTablePath();
       boolean isMergeIndexEnabled = Boolean.parseBoolean(CarbonProperties.getInstance()
@@ -170,26 +173,37 @@ public class MapredCarbonOutputCommitter extends OutputCommitter {
           String absTablePath = carbonFile.getAbsolutePath();
           String partitionPath =
               absTablePath.substring(0, absTablePath.indexOf(carbonFile.getName()));
-          Set<String> indexSet = partitionIndexMap.get(partitionPath);
+          List<String> indexSet = partitionIndexMap.get(partitionPath);
           if (indexSet == null) {
-            indexSet = new HashSet<>();
+            indexSet = new ArrayList<>();
             indexSet.add(carbonFile.getName());
             partitionIndexMap.put(partitionPath, indexSet);
           } else {
-            indexSet.add(carbonFile.getAbsolutePath());
+            indexSet.add(carbonFile.getName());
+            partitionIndexMap.put(partitionPath, indexSet);
           }
         }
         // check if mergeIndex is enabled. If enabled, then call merge index files.
         // If disabled, then set the index files name and partitions to jobContext,
         // commitJob will handle writing segment file
         if (isMergeIndexEnabled) {
+          int numThreads = partitionIndexMap.size();
+          ExecutorService executorService = Executors.newFixedThreadPool(numThreads);
           partitionIndexMap.forEach((partitionPath, indexSet) -> {
-            new CarbonIndexFileMergeWriter(
-                carbonLoadModel.getCarbonDataLoadSchema().getCarbonTable())
-                .mergeCarbonIndexFilesOfSegment(carbonLoadModel.getSegmentId(),
-                    String.valueOf(carbonLoadModel.getFactTimeStamp()), tablePath, partitionPath,
-                    false, indexSet.stream().collect(Collectors.toList()));
+            executorService.execute(() -> {
+              new CarbonIndexFileMergeWriter(
+                  carbonLoadModel.getCarbonDataLoadSchema().getCarbonTable())
+                  .mergeCarbonIndexFilesOfHivePartition(carbonLoadModel.getSegmentId(),
+                      String.valueOf(carbonLoadModel.getFactTimeStamp()), partitionPath, indexSet,
+                      carbonFiles.toArray(new CarbonFile[carbonFiles.size()]));
+            });
           });
+          try {
+            executorService.shutdown();
+            executorService.awaitTermination(30, TimeUnit.MINUTES);
+          } catch (InterruptedException e) {
+            LOGGER.error("Error while merge index in multi-thread : " + e.getMessage(), e);
+          }
           SegmentFileStore
               .writeSegmentFile(carbonLoadModel.getTablePath(), carbonLoadModel.getSegmentId(),
                   String.valueOf(carbonLoadModel.getFactTimeStamp()),

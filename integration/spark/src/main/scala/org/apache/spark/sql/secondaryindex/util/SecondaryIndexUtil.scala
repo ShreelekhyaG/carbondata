@@ -252,7 +252,7 @@ object SecondaryIndexUtil {
               new CarbonIndexFileMergeWriter(indexCarbonTable)
                 .writeMergeIndexFileBasedOnSegmentFolder(null, false, segmentPath,
                   seg.getLoadName, carbonLoadModel.getFactTimeStamp.toString,
-                  true)
+                  true, null)
             } catch {
               case e: IOException =>
                 val message =

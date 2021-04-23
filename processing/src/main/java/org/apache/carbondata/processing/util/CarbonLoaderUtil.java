@@ -1172,7 +1172,7 @@ public final class CarbonLoaderUtil {
     try {
       return new CarbonIndexFileMergeWriter(table)
           .writeMergeIndexFileBasedOnSegmentFolder(null, false, segmentPath, segmentId, uuid,
-              false);
+              false, null);
     } catch (IOException e) {
       String message =
           "Failed to merge index files in path: " + segmentPath + ". " + e.getMessage();

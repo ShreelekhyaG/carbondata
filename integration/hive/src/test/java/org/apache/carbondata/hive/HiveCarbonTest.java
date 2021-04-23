@@ -75,17 +75,18 @@ public class HiveCarbonTest extends HiveTestUtils {
 
     System.setProperty("log4j2.debug","true");
     statement.execute("drop table if exists carbon_table1");
-  //  statement.execute("CREATE TABLE carbon_table1(shortField SMALLINT, intField INT) partitioned by (stringField date, stringField1 date)stored by 'org.apache.carbondata.hive.CarbonStorageHandler'");
-    statement.execute("CREATE TABLE carbon_table1(shortField SMALLINT , intField INT, bigintField BIGINT , doubleField DOUBLE, stringField STRING, timestampField TIMESTAMP, decimalField DECIMAL(18,2), dateField DATE, charField CHAR(5)) partitioned by (floatField FLOAT) stored by 'org.apache.carbondata.hive.CarbonStorageHandler'");
+    statement.execute("CREATE TABLE carbon_table1(shortField SMALLINT, intField INT, stringField STRING) partitioned by (age int, age1 int)stored by 'org.apache.carbondata.hive.CarbonStorageHandler'");
+  //  statement.execute("CREATE TABLE carbon_table1(shortField SMALLINT , intField INT, bigintField BIGINT , doubleField DOUBLE, stringField STRING, timestampField TIMESTAMP, decimalField DECIMAL(18,2), dateField DATE, charField CHAR(5)) partitioned by (floatField FLOAT) stored by 'org.apache.carbondata.hive.CarbonStorageHandler'");
     //    statement.execute("insert into carbon_table1 partition(stringField='ab') select 1,2");
 //    statement.execute("insert into carbon_table1 values(1,2,'2018-01-19 13:02:02.724', '2018-01-20 13:02:02.724')");
 //    statement.execute("insert into carbon_table1 values(1,2,'2018-01-19', '2018-01-20')");
-    statement.execute("insert into carbon_table1 values(1,10,1100,48.4,'spark','2015-04-23 12:01:01',1.23,'2015-04-23','aaa',2.5)");
-    statement.execute("insert into carbon_table1 values(5,17,1140,43.4,'spark','2015-07-27 12:01:02',3.45,'2015-07-27','bbb',3.5)");
+//    statement.execute("insert into carbon_table1 values(1,10,1100,48.4,'spark','2015-04-23 12:01:01',1.23,'2015-04-23','aaa',2.5),(5,17,1140,43.4,'spark','2015-07-27 12:01:02',3.45,'2015-07-27','bbb',3.5)");
+//    statement.execute("insert into carbon_table1 values(5,17,1140,43.4,'spark','2015-07-27 12:01:02',3.45,'2015-07-27','bbb',3.5)");
 
     //    statement.execute("insert overwrite table carbon_table1 values(1,2,'abc',3,4)");
 
-//    statement.execute("insert into carbon_table1 values(1,2,'abc',4,5),(1,2,'abc1',4,6)");
+    statement.execute("insert into carbon_table1 values(1,2,'abc',4,5),(1,2,'abc',4,6)");
+    statement.execute("insert into carbon_table1 values(1,2,'abc',4,6)");
 //    statement.execute("insert into carbon_table1 values(1,2,'abc'),(1,2,'')");
 
     //    statement.execute("drop table if exists carbon_table2");
@@ -94,22 +95,22 @@ public class HiveCarbonTest extends HiveTestUtils {
 //    statement.execute("select count(*) from carbon_table1");
 //
 //    statement.execute("insert into carbon_table2 select * from carbon_table1");
-    
-    
-    
+
+
+
     //    statement.executeQuery("select * from carbon_table1");
 
 
-//    statement.execute("drop table if exists hive_table1");
+    statement.execute("drop table if exists hive_table1");
     statement.execute("CREATE TABLE hive_table1(shortField SMALLINT, intField INT,stringField STRING,age int, age1 int) ROW FORMAT DELIMITED FIELDS TERMINATED BY ','");
 //    statement.execute("insert into hive_table1 values(1,2,'ab',3,4)");
 //    statement.execute("insert into hive_table1 values(1,2,'ab',3,4)");
 //
 //    //    statement.execute("insert overwrite table hive_table1 values(1,2,'abc',3,4)");
 ////
-////    statement.execute("insert into hive_table1 values(1,2,'abc',4,5),(1,2,'abc',4,6)");
+    statement.execute("insert into hive_table1 values(1,2,'abc',4,5),(1,2,'abc',4,6)");
 ////    statement.executeQuery("select * from hive_table1");
-    checkAnswer(statement.executeQuery("select * from hive_table"),
+    checkAnswer(statement.executeQuery("select * from hive_table1"),
         connection.createStatement().executeQuery("select * from carbon_table1"));
 //    checkAnswer(statement.executeQuery("select * from hive_table1 where stringField='ab'"),
 //        connection.createStatement().executeQuery("select * from carbon_table1 where stringField='ab'"));

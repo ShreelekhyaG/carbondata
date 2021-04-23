@@ -107,7 +107,7 @@ public class CarbonIndexFileMergeWriter {
           segmentPath = partitionPath;
         }
         return writeMergeIndexFileBasedOnSegmentFolder(indexFileNamesTobeAdded,
-            isOldStoreIndexFilesPresent, segmentPath, segmentId, uuid, true);
+            isOldStoreIndexFilesPresent, segmentPath, segmentId, uuid, true, null);
       } else {
         return writeMergeIndexFileBasedOnSegmentFile(segmentId, indexFileNamesTobeAdded,
             isOldStoreIndexFilesPresent, sfs,
@@ -187,9 +187,9 @@ public class CarbonIndexFileMergeWriter {
   }
 
   public String writeMergeIndexFileBasedOnSegmentFolder(List<String> indexFileNamesTobeAdded,
-      boolean isOldStoreIndexFilesPresent, String segmentPath,
-      String segmentId, String uuid, boolean readBasedOnUUID) throws IOException {
-    CarbonFile[] indexFiles = null;
+      boolean isOldStoreIndexFilesPresent, String segmentPath, String segmentId, String uuid,
+      boolean readBasedOnUUID, CarbonFile[] indexFilesToMerge) throws IOException {
+    CarbonFile[] indexFiles = indexFilesToMerge;
     SegmentIndexFileStore fileStore = new SegmentIndexFileStore();
     if (isOldStoreIndexFilesPresent) {
       // this case will be used in case of upgrade where old store will not have the blocklet
@@ -197,16 +197,17 @@ public class CarbonIndexFileMergeWriter {
       // in the carbondata file
       fileStore.readAllIndexAndFillBlockletInfo(segmentPath, null);
     } else {
-      if (readBasedOnUUID) {
-        indexFiles = SegmentIndexFileStore
-            .getCarbonIndexFiles(segmentPath, FileFactory.getConfiguration(), uuid);
-        fileStore.readAllIIndexOfSegment(segmentPath, uuid);
-      } else {
-        // The uuid can be different, when we add load from external path.
-        indexFiles =
-            SegmentIndexFileStore.getCarbonIndexFiles(segmentPath, FileFactory.getConfiguration());
-        fileStore.readAllIIndexOfSegment(segmentPath);
+      if (indexFilesToMerge == null) {
+        if (readBasedOnUUID) {
+          indexFiles = SegmentIndexFileStore
+              .getCarbonIndexFiles(segmentPath, FileFactory.getConfiguration(), uuid);
+        } else {
+          // The uuid can be different, when we add load from external path.
+          indexFiles = SegmentIndexFileStore
+              .getCarbonIndexFiles(segmentPath, FileFactory.getConfiguration());
+        }
       }
+      fileStore.readAllIIndexOfSegment(indexFiles);
     }
     Map<String, byte[]> indexMap = fileStore.getCarbonIndexMap();
     Map<String, List<String>> mergeToIndexFileMap = fileStore.getCarbonMergeFileToIndexFilesMap();
@@ -364,10 +365,17 @@ public class CarbonIndexFileMergeWriter {
         isOldStoreIndexFilesPresent, uuid, partitionPath);
   }
 
-  public String mergeCarbonIndexFilesOfSegment(String segmentId, String uuid, String tablePath,
-      String partitionPath, boolean isOldStoreIndexFilesPresent, List<String> indexFileNames) {
-    return mergeCarbonIndexFilesOfSegment(segmentId, tablePath, indexFileNames,
-        isOldStoreIndexFilesPresent, uuid, partitionPath);
+  public String mergeCarbonIndexFilesOfHivePartition(String segmentId, String uuid,
+      String partitionPath, List<String> indexFileNames, CarbonFile[] indexFiles) {
+    try {
+      return writeMergeIndexFileBasedOnSegmentFolder(indexFileNames, false, partitionPath,
+          segmentId, uuid, false, indexFiles);
+    } catch (IOException e) {
+      String message =
+          "Failed to merge index files in path: " + partitionPath + ". " + e.getMessage();
+      LOGGER.error(message);
+      throw new RuntimeException(message, e);
+    }
   }
 
   /**
