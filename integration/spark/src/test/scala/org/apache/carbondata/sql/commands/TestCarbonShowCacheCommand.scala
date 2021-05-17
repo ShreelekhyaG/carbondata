@@ -17,8 +17,12 @@
 
 package org.apache.carbondata.sql.commands
 
+import java.util
+
 import scala.collection.JavaConverters._
 
+import mockit.{Mock, MockUp}
+import org.apache.hadoop.conf.Configuration
 import org.apache.spark.sql.{CarbonEnv, Row}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.test.util.QueryTest
@@ -29,7 +33,12 @@ import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandExcepti
 import org.apache.carbondata.core.cache.CacheProvider
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
+import org.apache.carbondata.core.index.{IndexUtil, Segment}
+import org.apache.carbondata.core.indexstore.{ExtendedBlocklet, PartitionSpec}
+import org.apache.carbondata.core.metadata.schema.table.CarbonTable
+import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf
 import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.carbondata.hadoop.api.CarbonInputFormat
 
 class TestCarbonShowCacheCommand extends QueryTest with BeforeAndAfterAll {
   override protected def beforeAll(): Unit = {
@@ -238,6 +247,29 @@ class TestCarbonShowCacheCommand extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists maintable1")
     CarbonProperties.getInstance()
       .removeProperty(CarbonCommonConstants.CARBON_INDEXSEVER_ENABLE_PREPRIMING)
+  }
+
+  // Runs only when index server is enabled.
+  test("test embedded pruning", false) {
+    val mock: MockUp[CarbonInputFormat[Object]] = new MockUp[CarbonInputFormat[Object]]() {
+      @Mock
+      def getDistributedSplit(table: CarbonTable, filterResolverIntf: FilterResolverIntf,
+          partitionNames: util.List[PartitionSpec], validSegments: util.List[Segment],
+          invalidSegments: util.List[Segment], segmentsToBeRefreshed: util.List[String],
+          isCountJob: Boolean, configuration: Configuration):
+      util.List[ExtendedBlocklet] = {
+        IndexUtil.executeIndexJob(table, filterResolverIntf, IndexUtil.getEmbeddedJob,
+          partitionNames, validSegments, invalidSegments, null, true,
+          segmentsToBeRefreshed, isCountJob, false, configuration)
+      }
+    }
+    sql("drop table if exists maintable1")
+    sql("create table maintable1(a string, b int, c string) stored as carbondata")
+    sql("insert into maintable1 select 'k',1,'k'")
+    checkAnswer(sql("select * from maintable1"), Seq(Row("k", 1, "k")))
+    val showCache = sql("SHOW METACACHE on table maintable1").collect()
+    assert(showCache(1).get(2).toString.equalsIgnoreCase("1/1 index files cached"))
+    mock.tearDown()
   }
 
   test("test index files cached for table with single partition") {

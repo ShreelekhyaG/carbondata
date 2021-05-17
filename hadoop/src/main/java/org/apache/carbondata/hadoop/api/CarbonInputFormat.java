@@ -445,7 +445,7 @@ public abstract class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
         segmentsToBeRefreshed, true, configuration);
   }
 
-  private List<ExtendedBlocklet> getDistributedSplit(CarbonTable table,
+  public List<ExtendedBlocklet> getDistributedSplit(CarbonTable table,
       FilterResolverIntf filterResolverIntf, List<PartitionSpec> partitionNames,
       List<Segment> validSegments, List<Segment> invalidSegments,
       List<String> segmentsToBeRefreshed, boolean isCountJob, Configuration configuration) {
