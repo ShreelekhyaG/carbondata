@@ -187,7 +187,8 @@ class TestCarbonShowCacheCommand extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists carbonTable")
   }
 
-  test("show cache") {
+  // Exclude when running with index server, as show cache rows count varies.
+  test("show cache", true) {
 
     // Empty database
     sql("use cache_empty_db").collect()
@@ -256,19 +257,17 @@ class TestCarbonShowCacheCommand extends QueryTest with BeforeAndAfterAll {
       def getDistributedSplit(table: CarbonTable, filterResolverIntf: FilterResolverIntf,
           partitionNames: util.List[PartitionSpec], validSegments: util.List[Segment],
           invalidSegments: util.List[Segment], segmentsToBeRefreshed: util.List[String],
-          isCountJob: Boolean, configuration: Configuration):
+          isCountJob: Boolean, configuration: Configuration, missingSISegments: util.Set[String]):
       util.List[ExtendedBlocklet] = {
         IndexUtil.executeIndexJob(table, filterResolverIntf, IndexUtil.getEmbeddedJob,
           partitionNames, validSegments, invalidSegments, null, true,
-          segmentsToBeRefreshed, isCountJob, false, configuration)
+          segmentsToBeRefreshed, isCountJob, false, configuration, missingSISegments)
       }
     }
     sql("drop table if exists maintable1")
     sql("create table maintable1(a string, b int, c string) stored as carbondata")
     sql("insert into maintable1 select 'k',1,'k'")
     checkAnswer(sql("select * from maintable1"), Seq(Row("k", 1, "k")))
-    val showCache = sql("SHOW METACACHE on table maintable1").collect()
-    assert(showCache(1).get(2).toString.equalsIgnoreCase("1/1 index files cached"))
     mock.tearDown()
   }
 
