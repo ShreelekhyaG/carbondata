@@ -21,6 +21,7 @@ import java.sql.{Date, Timestamp}
 
 import scala.collection.JavaConverters
 import scala.collection.mutable
+import scala.collection.mutable.WrappedArray.make
 
 import org.apache.spark.sql.{CarbonEnv, Row}
 import org.apache.spark.sql.test.util.QueryTest
@@ -159,7 +160,6 @@ class TestAlterTableAddColumns extends QueryTest with BeforeAndAfterAll {
   }
 
   test("Test adding of array of all primitive datatypes") {
-    import scala.collection.mutable.WrappedArray.make
     sql("DROP TABLE IF EXISTS alter_com")
     sql("CREATE TABLE alter_com(intfield int) STORED AS carbondata")
     sql(
@@ -212,6 +212,33 @@ class TestAlterTableAddColumns extends QueryTest with BeforeAndAfterAll {
     val addedColumns = addedColumnsInSchemaEvolutionEntry("alter_com")
     assert(addedColumns.size == 1)
     sql("DROP TABLE IF EXISTS alter_com")
+  }
+
+  test("Test adding of map datatype with alter command") {
+    sql("DROP TABLE IF EXISTS alter_com")
+    sql("CREATE TABLE alter_com(intfield int, arr1 array<string>) STORED AS carbondata")
+    sql("insert into alter_com values(1, array('a','b'))")
+    // add single level map
+    sql("ALTER TABLE alter_com ADD COLUMNS(map1 Map<string, string>)")
+    sql("insert into alter_com values(1, array('a','b'), map('a','b'))")
+    // add 2 level nested map
+    sql("ALTER TABLE alter_com ADD COLUMNS(map2 map<string,array<string>>)")
+    sql("insert into alter_com values(1, array('a','b'), map('a','b'), map('a',array('hi')))")
+    // add 3 level nested map
+    sql("ALTER TABLE alter_com ADD COLUMNS(map3 map<string,struct<d:int, s:struct<im:string>>>)")
+    sql(
+      "insert into alter_com values(1, array('a','b'), map('a','b'), map('a',array('hi')), map" +
+      "('a',named_struct('d',23,'s',named_struct('im','sh'))))")
+    sql("create index index_11 on table alter_com(arr1) as 'carbondata'")
+    sql("alter table alter_com compact 'minor'")
+    checkAnswer(sql("select * from alter_com"),
+      Seq(Row(1, make(Array("a", "b")), null, null, null),
+        Row(1, make(Array("a", "b")), Map("a" -> "b"), null, null),
+        Row(1, make(Array("a", "b")), Map("a" -> "b"), Map("a" -> make(Array("hi"))), null),
+        Row(1, make(Array("a", "b")),
+          Map("a" -> "b"), Map("a" -> make(Array("hi"))), Map("a" -> Row(23, Row("sh"))))))
+    val addedColumns = addedColumnsInSchemaEvolutionEntry("alter_com")
+    assert(addedColumns.size == 3)
   }
 
   test("Test alter add complex type and compaction") {
@@ -279,7 +306,6 @@ class TestAlterTableAddColumns extends QueryTest with BeforeAndAfterAll {
 
   // Exclude when running with index server as the returned rows order may vary
   test("Test alter add for arrays enabling local dictionary", true) {
-    import scala.collection.mutable.WrappedArray.make
     createTableForComplexTypes("LOCAL_DICTIONARY_INCLUDE", "ARRAY")
     // For the previous segments the default value for newly added array column is null
     insertIntoTableForArrayType
@@ -359,22 +385,27 @@ class TestAlterTableAddColumns extends QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS alter_struct")
   }
 
-  test("Validate alter add multi-level complex column") {
+  test("alter add multi-level complex column") {
     sql("DROP TABLE IF EXISTS alter_com")
-    sql("CREATE TABLE alter_com(intField INT, arr array<int>) " +
+    sql("CREATE TABLE alter_com(intField INT, arr array<string>) " +
       "STORED AS carbondata ")
-    var exception = intercept[Exception] {
-      sql("ALTER TABLE alter_com ADD COLUMNS(arr1 array<array<int>>) ")
-    }
-    val exceptionMessage =
-      "operation failed for default.alter_com: Alter table add operation failed: Alter add " +
-      "columns with nested complex types is not allowed"
-    assert(exception.getMessage.contains(exceptionMessage))
-
-    exception = intercept[Exception] {
-      sql("ALTER TABLE alter_com ADD COLUMNS(struct1 struct<arr: array<int>>) ")
-    }
-    assert(exception.getMessage.contains(exceptionMessage))
+    sql("insert into alter_com values(1, array('a','b'))")
+    sql("ALTER TABLE alter_com ADD COLUMNS(arr1 array<array<int>>) ")
+    sql("insert into alter_com values(1, array('a','b'), array(array(1,2)))")
+    sql("ALTER TABLE alter_com ADD COLUMNS(struct1 struct<arr: array<int>>) ")
+    sql("insert into alter_com values(1, array('a','b'),  array(array(1,2)), named_struct('arr',array(1,2)))")
+    sql("insert into alter_com values(2, array('a','b'),  array(array(2,3)), named_struct('arr',array(2,3)))")
+    sql("create index index_11 on table alter_com(arr) as 'carbondata'")
+    sql("alter table alter_com compact 'minor'")
+    sql("select *from alter_com").show(false)
+//    checkAnswer(sql("select * from alter_com"),
+//      Seq(Row(1, make(Array("a", "b")), null, null, null),
+//        Row(1, make(Array("a", "b")), Map("a" -> "b"), null, null),
+//        Row(1, make(Array("a", "b")), Map("a" -> "b"), Map("a" -> make(Array("hi"))), null),
+//        Row(1, make(Array("a", "b")),
+//          Map("a" -> "b"), Map("a" -> make(Array("hi"))), Map("a" -> Row(23, Row("sh"))))))
+    val addedColumns = addedColumnsInSchemaEvolutionEntry("alter_com")
+    assert(addedColumns.size == 2)
     sql("DROP TABLE IF EXISTS alter_com")
   }
 
@@ -391,21 +422,6 @@ class TestAlterTableAddColumns extends QueryTest with BeforeAndAfterAll {
     val exceptionMessage =
       "operation failed for default.alter_com: Alter table add operation failed: Cannot add a " +
       "default value in case of complex columns."
-    assert(exception.getMessage.contains(exceptionMessage))
-  }
-
-  test("Validate adding of map types through alter command") {
-    sql("DROP TABLE IF EXISTS alter_com")
-    sql(
-      "CREATE TABLE alter_com(doubleField double, arr1 array<long>, m map<int, string> ) STORED " +
-      "AS carbondata")
-    sql("insert into alter_com values(1.1,array(77),map(1,'abc'))")
-    val exception = intercept[Exception] {
-      sql("ALTER TABLE alter_com ADD COLUMNS(mapField map<int, string>)")
-    }
-    val exceptionMessage =
-      "operation failed for default.alter_com: Alter table add operation failed: Add column is " +
-      "unsupported for map datatype column: mapfield"
     assert(exception.getMessage.contains(exceptionMessage))
   }
 
